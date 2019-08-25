@@ -1,0 +1,238 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2016-present Parker Moore and the minima contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+@charset "utf-8";
+
+// Define defaults for each variable.
+
+$base-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$base-font-size:   16px !default;
+$base-font-weight: 400 !default;
+$small-font-size:  $base-font-size * 0.875 !default;
+$base-line-height: 1.5 !default;
+
+$spacing-unit:     30px !default;
+
+$text-color:       #111 !default;
+$background-color: #fdfdfd !default;
+$brand-color:      #2a7ae2 !default;
+
+$grey-color:       #828282 !default;
+$grey-color-light: lighten($grey-color, 40%) !default;
+$grey-color-dark:  darken($grey-color, 25%) !default;
+
+$table-text-align: left !default;
+
+// Width of the content area
+$content-width:    800px !default;
+
+$on-palm:          600px !default;
+$on-laptop:        800px !default;
+
+// Use media queries like this:
+// @include media-query($on-palm) {
+//   .wrapper {
+//     padding-right: $spacing-unit / 2;
+//     padding-left: $spacing-unit / 2;
+//   }
+// }
+@mixin media-query($device) {
+  @media screen and (max-width: $device) {
+    @content;
+  }
+}
+
+@mixin relative-font-size($ratio) {
+  font-size: $base-font-size * $ratio;
+}
+
+// Import partials.
+@import
+  "minima/base",
+  "minima/layout"
+;
+
+@include media-query($on-palm) {
+	.post-content {
+		td,th {
+			display: block;
+			border: none;
+			text-align: center;
+			padding: none;
+		}
+		tr {
+			display: block;
+			padding-bottom: 30px;
+		}
+		table {
+			width: 100%;
+		}
+	}
+}
+
+button, button:active:disabled {
+	background: white;
+	border-radius: 3px;
+	border: solid 1px;
+	box-shadow: 2px 2px lightgrey;
+	margin-bottom: 1px;
+	margin-left: 0px;
+	margin-right: 1px;
+	overflow: hidden;
+	padding: 1px 8px 0px 8px;
+	touch-action: manipulation;
+}
+
+button:active {
+	padding: 0px 8px 0px 8px;
+	margin-left: 1px;
+	margin-right: 0px;
+	margin-bottom: 1px;
+	border: solid 1px;
+	background: white;
+	box-shadow: none;
+	border-radius: 3px;
+	overflow: hidden;
+	touch-action: manipulation;
+}
+
+.spinner {
+	display: none;
+	font-size: smaller;
+}
+
+.error {
+	color: red;
+	background-color: bisque;
+	padding: 4px*0.75 4px 4px*0.75 4px;
+	border: 1px;
+	border-radius: 4px;
+	border-color: red;
+	border-style: solid;
+	margin: 5px;
+	display: none;
+}
+
+#ching {
+	label {
+		font-size: x-large;
+	}
+	
+	fieldset {
+		margin-bottom: 1em;
+	}
+	
+	button {
+		font-size: x-large;
+	}
+
+	#pattern-select button {
+		display: block;
+	}
+
+	#ching-visualize {
+		height: 30px;
+		width: 300px;
+		.ching-visualize-block {
+			display: inline-block;
+			border: solid 1px grey;
+			border-radius: 3px;
+			height: 25px;
+			width: 66px;
+		}
+	}
+}
+
+.buttonstrip-sml {
+	button {
+		width: 3em;
+	}
+
+	padding-bottom: 5px;
+	padding-top: 5px;
+}
+
+.buttonstrip-med {
+	button {
+		width: 4em;
+	}
+	
+	margin-bottom: 5px;
+	margin-top: 5px;
+}
+
+.buttonstrip-lrg {
+	button {
+		width: 6em;
+		height: 2em;
+	}
+	
+	margin-bottom: 5px;
+	margin-top: 5px;
+}
+
+.flexbox-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	div {
+		padding-left: 2px;
+		padding-right: 2px;
+	}
+}
+
+.controlstrip {
+	display: flex;
+	margin-bottom: 1em;
+	margin-top: 1em;
+	width: 100%;
+	label {
+		display: flex;
+		flex-direction: column;
+		input {
+			width: 3em;
+			font-size: x-large;
+		}
+	}
+}
+
+fieldset {
+	border-style: none;
+	padding-left: 5px;
+	padding-right: 0px;
+	legend {
+		background-color: lavender;
+		width: 100%;
+		border-radius: 5px;
+		margin-left: -10px;
+	}
+}
+
+@include media-query($on-palm) {
+	fieldset {
+		padding-left: 0px;
+		legend {
+			margin-left: 0px;
+		}
+	}
+}
