@@ -1,9 +1,20 @@
-.PHONY : clean serve build android android-emu
+TYPESCRIPT = node_modules/typescript/bin/tsc
 
-www/css/app.css : sass/minima.scss
+.PHONY: clean serve build android android-emu
+
+build: www/css www/js www/css/app.css www/js/ching.js
+
+www/js/%.js : ts/%.ts
+	$(TYPESCRIPT) --noEmitOnError --outFile $@ $<
+
+www/css/app.css : sass/app.scss
 	sass $<:$@
 
-build: www/css/app.css
+www/js :
+	mkdir -p $@
+
+www/css :
+	mkdir -p $@
 
 android: build
 	cordova run android --device

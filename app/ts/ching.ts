@@ -342,7 +342,7 @@ function makeInstrument(audioCtx, nodes) {
   }
 }
 
-function makeFmInstrument(audioCtx, fmNodes, connections=null) {
+function makeFmInstrument(audioCtx:AudioContext, fmNodes:any[], connections:any[]=null) {
   if (!connections) {
 		for (let i = 0; i < fmNodes.length - 1; ++i) {
 			fmNodes[i + 1].output.connect(fmNodes[i].osc.frequency);
@@ -351,9 +351,9 @@ function makeFmInstrument(audioCtx, fmNodes, connections=null) {
 		connections.forEach(c => fmNodes[c[0]].output.connect(fmNodes[c[1]].osc.frequency))
   }
 
-  return Object.assign(
-		makeInstrument(audioCtx, fmNodes),
-		{
+  return {
+		...makeInstrument(audioCtx, fmNodes),
+		...{
 			connect: (node) => {
 				fmNodes[0].output.connect(node);
 			},
@@ -361,7 +361,7 @@ function makeFmInstrument(audioCtx, fmNodes, connections=null) {
 				fmNodes[0].output.disconnect();
 			}
 		}
-  )
+  }
 }
 
 function makeFmNode(audioCtx, type, freq, gGain, tAttack, tDecay, gSustain, tRelease) {
@@ -395,9 +395,9 @@ function makeFmNode(audioCtx, type, freq, gGain, tAttack, tDecay, gSustain, tRel
   }
 }
 
-function makeDrum(audioCtx, params) {
-  const p = Object.assign(
-		{
+function makeDrum(audioCtx:AudioContext, params) {
+  const p = {
+		...{
 			freqStart: 225,
 			freqEnd: 80,
 			decay: 0.7,
@@ -409,8 +409,8 @@ function makeDrum(audioCtx, params) {
 			freqVary:2.5,
 			magFreqVary:2.5
 		},
-		params
-  )
+		...params
+  }
   
   const carrier = makeFmNode(audioCtx, p.type, p.freqEnd, p.gain, p.attack, p.decay, 0, 0.0);
   const freqStrike = p.freqStart/2
@@ -492,22 +492,24 @@ function makeShaper(audioCtx, factorA=1, factorB=1, shift=1, oversample='4x') {
   return result
 }
 
-const appChing = {
-  analyser: false,
-  tick: 0,
-  idxPattern: 0,
-  tickStart: null,
-  tickTimeLast: null,
-  bpm: null,
-  tickPeriod: null,
-  currentTimeout: null,
-  playing: false,
-  setup: false,
-  timings: [],
-  drumPattern: "",
-  drumPatternNext: "",
-  eBpmJing: null
+class AppChing {
+  analyser = false;
+  tick = 0;
+  idxPattern = 0;
+  tickStart = null;
+  tickTimeLast = null;
+  bpm = null;
+  tickPeriod = null;
+  currentTimeout = null;
+  playing = false;
+  setup = false;
+  timings = [];
+  drumPattern = "";
+  drumPatternNext = "";
+  eBpmJing = null;
 }
+
+const appChing = new AppChing();
 
 function bpmToTickPeriodMs(bpm) {
   return 60000.0 / bpm / 2
@@ -657,12 +659,11 @@ function setup(ePlay, eStop, eBpm, eAnalyser, eAnalyserOn, eAnalyserOff) {
 		document.getElementById("ching-visualize-3")
 	];
 	
-  const eHong = document.getElementById("hong")
+  const eHong = document.getElementById("hong") as HTMLFormElement
   const chingFreq = 2500.0
   const closeFreq = 5400.0
   
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audioCtx = new AudioContext();
+  const audioCtx = new ((<any>window).AudioContext || (<any>window).webkitAudioContext)();
   
   const gainMaster = audioCtx.createGain();
   gainMaster.gain.value = 0.5;
@@ -756,11 +757,11 @@ function setup(ePlay, eStop, eBpm, eAnalyser, eAnalyserOn, eAnalyserOff) {
   quietNoise.loopEnd = 0.25;
   quietNoise.start();
   
-  const doChingOpen = (e) => {
+  const doChingOpen = () => {
 		chingClosed.noteOn(0.15);
 		chingOpen.noteOn();
   }
-  const doChingClose = (e) => {
+  const doChingClose = () => {
 		chingClosed.noteOn();
 		chingOpen.noteOff();
   }
@@ -965,10 +966,10 @@ function setup(ePlay, eStop, eBpm, eAnalyser, eAnalyserOn, eAnalyserOff) {
 }
 
 document.addEventListener("DOMContentLoaded", e => {
-  var ePlay = document.getElementById("play")
-  var eStop = document.getElementById("stop")
-  var eBpm = document.getElementById("bpm")
-  appChing.eBpmJing = document.getElementById("bpm-jing")
+  const ePlay = document.getElementById("play") as HTMLFormElement
+  const eStop = document.getElementById("stop") as HTMLFormElement
+  const eBpm = document.getElementById("bpm") as HTMLFormElement
+  appChing.eBpmJing = document.getElementById("bpm-jing") as HTMLFormElement
   
   // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
   // original click event.
@@ -987,10 +988,15 @@ document.addEventListener("DOMContentLoaded", e => {
 		}
 		e.target.removeEventListener("click", setupFunc);
   }
+
+	{
+		const buts = document.getElementsByTagName("button");
+		for (let i=0; i < buts.length; ++i) {
+			buts[i].addEventListener("click", setupFunc)
+		}
+	}
   
-  Array.from(document.getElementsByTagName("button")).forEach(ctl => ctl.addEventListener("click", setupFunc))
-  
-  eStop.setAttribute('disabled',1);
+  eStop.setAttribute('disabled',"1");
 
   const funcBpmMod = (e) => {
 		if (e.target.dataset.set) {
@@ -1004,12 +1010,17 @@ document.addEventListener("DOMContentLoaded", e => {
 		onBpmChange(appChing.bpm);
   }
   
-  Array.from(document.getElementsByClassName("bpm-mod")).forEach((e) => e.addEventListener("click", funcBpmMod));
+	{
+		const buts = document.getElementsByClassName("bpm-mod");
+		for (let i=0; i < buts.length; ++i) {
+			buts[i].addEventListener("click", funcBpmMod);
+		}
+	}
 
   onBpmChange(getBpm(eBpm.value));
 
-  const ePatternDrum = document.getElementById("pattern-drum");
-  ePatternDrum.addEventListener("change", e => onDrumPatternChange(e.target.value));
+  const ePatternDrum = document.getElementById("pattern-drum") as HTMLFormElement;
+  ePatternDrum.addEventListener("change", e => onDrumPatternChange((e.target as HTMLFormElement).value));
 
   [
 		["pattern-none", ""],
