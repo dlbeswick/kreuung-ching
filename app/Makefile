@@ -1,6 +1,11 @@
-TYPESCRIPT = node_modules/typescript/bin/tsc
+CORDOVA = node_modules/.bin/cordova
+TYPESCRIPT = node_modules/.bin/tsc
+SASS = sass
 
-.PHONY: clean serve build android android-emu
+.PHONY: clean serve build run run-emu cordova
+
+cordova: build
+	$(CORDOVA) prepare
 
 build: www/css www/js www/css/app.css www/js/ching.js
 
@@ -8,7 +13,7 @@ www/js/%.js : ts/%.ts
 	$(TYPESCRIPT) --noEmitOnError --outFile $@ $<
 
 www/css/app.css : sass/app.scss
-	sass $<:$@
+	$(SASS) $<:$@
 
 www/js :
 	mkdir -p $@
@@ -16,15 +21,16 @@ www/js :
 www/css :
 	mkdir -p $@
 
-android: build
-	cordova run android --device
+run: build
+	$(CORDOVA) run android --device
 
-android-emu: build
-	cordova run android --emulator
+run-emu: build
+	$(CORDOVA) run android --emulator
 
 serve: build
-	cordova run browser
+	$(CORDOVA) run browser
 
 clean:
-	-rm www/css/*.css
-
+	rm www/css/*.css
+	rm www/js/*.js
+	$(CORDOVA) clean
