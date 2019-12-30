@@ -224,16 +224,10 @@ namespace AppChing {
     const chingFreq = 3200.0
     const chingFreq1 = 2900.0
     const closeFreq = 5400.0
-    const chingGain = 0.25
+    const chingGain = 0.1 // gain must be low to avoid triggering the waveshaper during sustain
 
     const makeChingOpen = (freq, gain, release) => {
-      return new InstrumentFm(
-        audioCtx,
-        [
-          new InstrumentNodeFmExp(audioCtx, 'sine', freq, gain, 0.0, 0.0, release, 0.0),
-          new InstrumentNodeFmLin(audioCtx, 'sine', freq*1.5, 50, 0.0, 1000000.0, 1.0, 0.0),
-        ]
-      )
+      return new InstrumentNodeFmExp(audioCtx, 'sine', freq, gain*25, 0.0, 0.0, 0.01, gain, release)
     }
     
     const chingOpen = new InstrumentComposite(
@@ -331,13 +325,18 @@ namespace AppChing {
 
     const instruments = Array.prototype.concat([chingOpen, chingClosed], drums)
 
-    const gainChing = audioCtx.createGain();
-    gainChing.connect(gainMaster);
+    const gainChing = audioCtx.createGain()
+    gainChing.connect(gainMaster)
 
-    const distortion = makeShaper(audioCtx, [chingClosed], [chingOpen], 1, 1, 1, '4x', 100)
+    const distortionClosed = makeShaper(audioCtx, [chingClosed], [], 1, 1, 1, '4x', 100)
+    distortionClosed.connect(gainChing)
 
-    distortion.connect(gainChing)
-
+    const gainChingOpen = audioCtx.createGain()
+    gainChingOpen.connect(gainChing)
+    gainChingOpen.gain.value = 4
+    const distortionOpen = makeShaper(audioCtx, [chingOpen], [], 1, 1, 1, '4x', 100)
+    distortionOpen.connect(gainChingOpen)
+    
     const analyser = audioCtx.createAnalyser();
     try {
       analyser.fftSize = 2048;
@@ -359,12 +358,13 @@ namespace AppChing {
     quietNoise.start();
 
     const doChingOpen = () => {
-      chingClosed.noteOn(0, 0.5)
       chingOpen.noteOn(0, 1)
+      // Once the open ching has finished decaying from the distortion phase, it must begin its release.
+      chingOpen.noteOff(audioCtx.currentTime + 0.1)
     }
     const doChingClose = () => {
       chingClosed.noteOn(0, 1)
-      chingOpen.noteOff(0)
+      chingOpen.kill(0)
     }
 
     const doPattern = (recurse=0) => {

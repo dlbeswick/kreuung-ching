@@ -128,7 +128,7 @@ namespace AppChing {
 
     output() { return this.nodeGain }
     
-    constructor(audioCtx, type, freq, gain, tAttack, cAttack, cDecay, gSustain, cRelease=0.01) {
+    constructor(audioCtx, type, freq, gain, tAttack, cAttack, cDecay, gSustain, cRelease) {
       super(audioCtx, type, freq, gain)
 
       this.cAttack = cAttack
