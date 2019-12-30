@@ -2,24 +2,30 @@ CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
 SASS = sass
 
-.PHONY: clean serve build run run-emu cordova
+.PHONY: clean serve build run run-emu cordova cordova-prepare browser
 
-cordova: build
+build: www/css/app.css www/js/ching.js | www/js www/css
+
+browser: cordova-prepare
+	$(CORDOVA) build browser
+
+cordova: cordova-prepare
+	$(CORDOVA) compile
+
+cordova-prepare: build
 	$(CORDOVA) prepare
-
-build: www/css www/js www/css/app.css www/js/ching.js
-
-www/js/%.js : ts/%.ts
-	$(TYPESCRIPT) --noEmitOnError --outFile $@ $<
-
-www/css/app.css : sass/app.scss
-	$(SASS) $<:$@
 
 www/js :
 	mkdir -p $@
 
 www/css :
 	mkdir -p $@
+
+www/js/ching.js : ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts
+	$(TYPESCRIPT) --noEmitOnError --alwaysStrict --outFile $@ $<
+
+www/css/app.css : sass/app.scss
+	$(SASS) $<:$@
 
 run: build
 	$(CORDOVA) run android --device
@@ -31,6 +37,6 @@ serve: build
 	$(CORDOVA) run browser
 
 clean:
-	rm www/css/*.css
-	rm www/js/*.js
+	rm -rf www/css
+	rm -rf www/js
 	$(CORDOVA) clean

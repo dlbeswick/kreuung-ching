@@ -12,7 +12,9 @@
   ],
   "author": "David Beswick",
   "license": "GPL-3.0",
-  "dependencies": {},
+  "dependencies": {
+    "cordova-plugin-device": "^2.0.3"
+  },
   "devDependencies": {
     "cordova": "^9.0.0",
     "cordova-android": "^8.0.0",
@@ -20,7 +22,9 @@
     "typescript": "^3.5.0"
   },
   "cordova": {
-    "plugins": {},
+    "plugins": {
+      "cordova-plugin-device": {}
+    },
     "platforms": [
       "browser",
       "android"

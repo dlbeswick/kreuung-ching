@@ -1,0 +1,4 @@
+namespace AppChing {
+  class GlongSet {
+  }
+}
