@@ -5,3 +5,4 @@ app/plugins/
 app/node_modules/
 app/www/css/
 app/www/js/
+app/www/data

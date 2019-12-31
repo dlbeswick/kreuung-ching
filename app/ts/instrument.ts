@@ -166,7 +166,7 @@ namespace AppChing {
 
     instruments() { return this.fmNodes }
     
-    constructor(audioCtx:AudioContext, fmNodes:InstrumentNodeFm[], connections?:number[][], gain=1) {
+    constructor(fmNodes:InstrumentNodeFm[], connections?:number[][], gain=1) {
       super()
       console.assert(fmNodes.length)
       
@@ -239,7 +239,6 @@ namespace AppChing {
       nodes.push(striker)
       
       super(
-        audioCtx,
         nodes, 
         (() => { if (params.freqVary) return [[1,0],[2,0]] ; else return undefined })()
       )
@@ -296,6 +295,81 @@ namespace AppChing {
     
     detune(val) {
       this.drum.detune(val)
+    }
+  }
+
+  export class Sample {
+    url:string
+    private _data:AudioBuffer
+    private promise:Promise<AudioBuffer>
+    
+    constructor(url) {
+      this.url = url
+    }
+
+    data():AudioBuffer {
+      console.assert(this._data, "load not called")
+      return this._data
+    }
+    
+    async load(ctx:AudioContext) {
+      const response = await fetch(this.url)
+      const reader = response.body.getReader()
+      let result = new Uint8Array()
+      
+      while (true) {
+        let srr = await reader.read()
+        if (srr.done)
+          break
+        else {
+          const next = new Uint8Array(result.length + srr.value.length)
+          next.set(result, 0)
+          next.set(srr.value, result.length)
+          result = next
+        }
+      }
+        
+      if (!response.ok) {
+        console.debug(this._data)
+        throw "Error getting sample at '" + response.url +"': " + response.status
+      } else {
+        this._data = await ctx.decodeAudioData(result.buffer)
+      }
+    }
+  }
+  
+  export class InstrumentSample extends InstrumentOutput {
+    gain:GainNode
+    node?:AudioBufferSourceNode
+    ctx:AudioContext
+    sample?:Sample
+    
+    constructor(ctx:AudioContext, sample?:Sample) {
+      super()
+      this.ctx = ctx
+      this.sample = sample
+      this.gain = this.ctx.createGain()
+    }
+
+    output() { return this.gain }
+
+    noteOn(time:number, gain:number):void {
+      if (this.sample) {
+        this.node = this.ctx.createBufferSource()
+        this.node.buffer = this.sample.data()
+        this.node.connect(this.gain)
+        this.node.start(time)
+      }
+    }
+    
+    noteOff(time:number):void {
+      if (this.node) {
+        this.node.stop(time)
+      }
+    }
+    
+    kill(time:number):void {
+      this.noteOff(time)
     }
   }
 }

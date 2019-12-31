@@ -196,7 +196,7 @@ namespace AppChing {
     }
   }
 
-  function setup(ePlay, eStop, eBpm, eAnalyser, eAnalyserOn, eAnalyserOff) {
+  async function setup(ePlay, eStop, eBpm, eAnalyser, eAnalyserOn, eAnalyserOff) {
     const eChingVises = [
       document.getElementById("ching-visualize-0"),
       document.getElementById("ching-visualize-1"),
@@ -220,37 +220,6 @@ namespace AppChing {
     const gainMaster = audioCtx.createGain();
     gainMaster.gain.value = 0.5;
     gainMaster.connect(audioCtx.destination);
-
-    const chingFreq = 3200.0
-    const chingFreq1 = 2900.0
-    const closeFreq = 5400.0
-    const chingGain = 0.1 // gain must be low to avoid triggering the waveshaper during sustain
-
-    const makeChingOpen = (freq, gain, release) => {
-      return new InstrumentNodeFmExp(audioCtx, 'sine', freq, gain*25, 0.0, 0.0, 0.01, gain, release)
-    }
-    
-    const chingOpen = new InstrumentComposite(
-      [
-        makeChingOpen(chingFreq, chingGain*1, 0.8),
-        makeChingOpen(chingFreq*0.9985, chingGain*0.25, 0.8),
-        makeChingOpen(chingFreq1, chingGain*0.5, 0.7),
-        makeChingOpen(chingFreq1*0.9985, chingGain*0.125, 0.7),
-        makeChingOpen(chingFreq*2.586, chingGain*0.5, 0.4),
-        makeChingOpen(chingFreq*2.586*0.9985, chingGain*0.125, 0.4),
-        makeChingOpen(chingFreq1*2.586, chingGain*0.25, 0.3),
-        makeChingOpen(chingFreq1*2.586*0.9985, chingGain*0.0625, 0.3),
-      ]
-    )
-
-    const chingClosed = new InstrumentFm(
-      audioCtx,
-      [
-        new InstrumentNodeFmLin(audioCtx, 'sine', closeFreq, 3, 0.0, 0.046, 0, 0.0),
-        new InstrumentNodeFmLin(audioCtx, 'square', closeFreq / 31, 10000, 0.00036, 0.370, 0, 0.0),
-        new InstrumentNodeFmLin(audioCtx, 'square', closeFreq / 31, 10000, 0.00036, 0.370, 0, 0.0)
-      ]
-    )
 
     const tuneGlong = (() => {
       try {
@@ -323,20 +292,49 @@ namespace AppChing {
     drums.forEach(i => i.connect(gainGlong));
     gainGlong.connect(gainMaster);
 
-    const instruments = Array.prototype.concat([chingOpen, chingClosed], drums)
-
     const gainChing = audioCtx.createGain()
     gainChing.connect(gainMaster)
 
-    const distortionClosed = makeShaper(audioCtx, [chingClosed], [], 1, 1, 1, '4x', 100)
-    distortionClosed.connect(gainChing)
+    //    const glongSet = new GlongSetSynthesized(audioCtx)
+    const samples = [
+      new Sample("data/chup-0.flac"),
+      new Sample("data/chup-1.flac"),
+      new Sample("data/chup-2.flac"),
+      new Sample("data/ching-0.flac"),
+      new Sample("data/ching-1.flac"),
+      new Sample("data/ching-2.flac"),
+      new Sample("data/sormchai-ctum-0.flac"),
+      new Sample("data/sormchai-ctum-1.flac"),
+      new Sample("data/sormchai-ctum-2.flac"),
+      new Sample("data/sormchai-dting-0.flac"),
+      new Sample("data/sormchai-dting-1.flac"),
+      new Sample("data/sormchai-dting-2.flac"),
+      new Sample("data/sormchai-jor-0.flac"),
+      new Sample("data/sormchai-jor-1.flac"),
+      new Sample("data/sormchai-jor-2.flac"),
+      new Sample("data/sormchai-jorng-0.flac"),
+      new Sample("data/sormchai-jorng-1.flac"),
+      new Sample("data/sormchai-jorng-2.flac"),
+    ]
 
-    const gainChingOpen = audioCtx.createGain()
-    gainChingOpen.connect(gainChing)
-    gainChingOpen.gain.value = 4
-    const distortionOpen = makeShaper(audioCtx, [chingOpen], [], 1, 1, 1, '4x', 100)
-    distortionOpen.connect(gainChingOpen)
+    for (let i of samples) i.load(audioCtx)
+    for (let i of samples) await i
     
+    const glongSet = new GlongSetSampled(
+      audioCtx,
+      samples.slice(0, 3),
+      samples.slice(3, 6),
+      [
+        samples.slice(6, 9),
+        samples.slice(9, 12),
+        samples.slice(12, 15),
+        samples.slice(15, 18)
+      ]
+    )
+    glongSet.connect(gainChing, gainGlong)
+    
+    const instruments = Array.prototype.concat([glongSet.chingOpen(), glongSet.chingClosed()], glongSet.glongs())
+
     const analyser = audioCtx.createAnalyser();
     try {
       analyser.fftSize = 2048;
@@ -357,15 +355,8 @@ namespace AppChing {
     quietNoise.loopEnd = 0.25;
     quietNoise.start();
 
-    const doChingOpen = () => {
-      chingOpen.noteOn(0, 1)
-      // Once the open ching has finished decaying from the distortion phase, it must begin its release.
-      chingOpen.noteOff(audioCtx.currentTime + 0.1)
-    }
-    const doChingClose = () => {
-      chingClosed.noteOn(0, 1)
-      chingOpen.kill(0)
-    }
+    const doChingOpen = () => glongSet.ching(0, 1)
+    const doChingClose = () => glongSet.chup(0, 1)
 
     const doPattern = (recurse=0) => {
       // TODO: replace with parser...
@@ -379,8 +370,8 @@ namespace AppChing {
       } else if (pattern.length > 0) {
         const idxPattern = appChing.idxPattern % pattern.length
         const drumNum = Number(pattern[idxPattern])
-        if (drumNum >= 0 && drumNum < drums.length) {
-          drums[drumNum].noteOn(0, 1)
+        if (drumNum >= 0) {
+          glongSet.glong(0, 1, drumNum)
           appChing.idxPattern += 1;
         } else if (pattern.slice(idxPattern, idxPattern+3) == 'END') {
           bpmRamp(Math.min(40, appChing.bpm * 0.5), 10 + Math.min(appChing.bpm-70) / 25, onStop);
@@ -535,10 +526,10 @@ namespace AppChing {
 
     document.getElementById("play-ching-closed").addEventListener("click", e => doChingClose() );
     document.getElementById("play-ching-open").addEventListener("click", e => doChingOpen() );
-    document.getElementById("play-drum-0").addEventListener("click", e => drums[0].noteOn(0, 1) );
-    document.getElementById("play-drum-1").addEventListener("click", e => drums[1].noteOn(0, 1) );
-    document.getElementById("play-drum-2").addEventListener("click", e => drums[2].noteOn(0, 1) );
-    document.getElementById("play-drum-3").addEventListener("click", e => drums[3].noteOn(0, 1) );
+    document.getElementById("play-drum-0").addEventListener("click", e => glongSet.glong(0, 1, 0) );
+    document.getElementById("play-drum-1").addEventListener("click", e => glongSet.glong(0, 1, 1) );
+    document.getElementById("play-drum-2").addEventListener("click", e => glongSet.glong(0, 1, 2) );
+    document.getElementById("play-drum-3").addEventListener("click", e => glongSet.glong(0, 1, 3) );
 
     [['vol-glong', gainGlong],
      ['vol-ching', gainChing]
