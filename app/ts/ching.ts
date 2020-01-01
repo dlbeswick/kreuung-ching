@@ -25,17 +25,20 @@
 /// <reference path="patterns.ts" />
 /// <reference path="shaper.ts" />
 
-var device:any // cordova
+var cordova:any // filled by cordova
+var device:any // filled by cordova
 
 namespace AppChing {
   const MSG = Messages.makeMultilingual([Messages.th, Messages.en])
 
-  window.onerror = (message, source, lineno, colno, error) => {
-    alert(message);
-    document.getElementById("error").style.display = "block";
-    document.getElementById("error").innerHTML = message + "<br/>" + "Line: " + lineno + "<br/>" + source;
-    return true;
+  function errorHandler(message, source?, lineno?, colno?, error?) {
+    alert(message)
+    document.getElementById("error").style.display = "block"
+    document.getElementById("error").innerHTML = message + "<br/>" + "Line: " + lineno + "<br/>" + source
+    return true
   }
+  
+  window.onerror = errorHandler
 
   class AppChing {
     analyser = false;
@@ -297,28 +300,27 @@ namespace AppChing {
 
     //    const glongSet = new GlongSetSynthesized(audioCtx)
     const samples = [
-      new Sample("data/chup-0.flac"),
-      new Sample("data/chup-1.flac"),
-      new Sample("data/chup-2.flac"),
-      new Sample("data/ching-0.flac"),
-      new Sample("data/ching-1.flac"),
-      new Sample("data/ching-2.flac"),
-      new Sample("data/sormchai-ctum-0.flac"),
-      new Sample("data/sormchai-ctum-1.flac"),
-      new Sample("data/sormchai-ctum-2.flac"),
-      new Sample("data/sormchai-dting-0.flac"),
-      new Sample("data/sormchai-dting-1.flac"),
-      new Sample("data/sormchai-dting-2.flac"),
-      new Sample("data/sormchai-jor-0.flac"),
-      new Sample("data/sormchai-jor-1.flac"),
-      new Sample("data/sormchai-jor-2.flac"),
-      new Sample("data/sormchai-jorng-0.flac"),
-      new Sample("data/sormchai-jorng-1.flac"),
-      new Sample("data/sormchai-jorng-2.flac"),
+      new Sample("chup-0.flac"),
+      new Sample("chup-1.flac"),
+      new Sample("chup-2.flac"),
+      new Sample("ching-0.flac"),
+      new Sample("ching-1.flac"),
+      new Sample("ching-2.flac"),
+      new Sample("sormchai-ctum-0.flac"),
+      new Sample("sormchai-ctum-1.flac"),
+      new Sample("sormchai-ctum-2.flac"),
+      new Sample("sormchai-dting-0.flac"),
+      new Sample("sormchai-dting-1.flac"),
+      new Sample("sormchai-dting-2.flac"),
+      new Sample("sormchai-jor-0.flac"),
+      new Sample("sormchai-jor-1.flac"),
+      new Sample("sormchai-jor-2.flac"),
+      new Sample("sormchai-jorng-0.flac"),
+      new Sample("sormchai-jorng-1.flac"),
+      new Sample("sormchai-jorng-2.flac"),
     ]
 
-    for (let i of samples) i.load(audioCtx)
-    for (let i of samples) await i
+    for (let p of samples.map(s => s.load(audioCtx))) await p
     
     const glongSet = new GlongSetSampled(
       audioCtx,
@@ -564,79 +566,82 @@ namespace AppChing {
     )
   }
 
-  document.addEventListener("DOMContentLoaded", e => {
-    const ePlay = document.getElementById("play") as HTMLFormElement
-    const eStop = document.getElementById("stop") as HTMLFormElement
-    const eBpm = document.getElementById("bpm") as HTMLFormElement
-    appChing.eBpmJing = document.getElementById("bpm-jing") as HTMLFormElement
+  document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("deviceready", () => {
+      const ePlay = document.getElementById("play") as HTMLFormElement
+      const eStop = document.getElementById("stop") as HTMLFormElement
+      const eBpm = document.getElementById("bpm") as HTMLFormElement
+      appChing.eBpmJing = document.getElementById("bpm-jing") as HTMLFormElement
 
-    // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
-    // original click event.
-    const setupFunc = (e) => {
-      if (!appChing.setup) {
-        appChing.setup = true;
-        setup(
-          ePlay,
-          eStop,
-          eBpm,
-          document.getElementById("analyser"),
-          document.getElementById("analyser-on"),
-          document.getElementById("analyser-off"),
-        );
-        e.target.click();
+      // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
+      // original click event.
+      const setupFunc = (e) => {
+        if (!appChing.setup) {
+          setup(
+            ePlay,
+            eStop,
+            eBpm,
+            document.getElementById("analyser"),
+            document.getElementById("analyser-on"),
+            document.getElementById("analyser-off")
+          ).then(() => {
+            e.target.click()
+            appChing.setup = true
+          }).catch(errorHandler)
+        }
+        e.target.removeEventListener("click", setupFunc);
       }
-      e.target.removeEventListener("click", setupFunc);
-    }
 
-    {
-      const buts = document.getElementsByTagName("button");
-      for (let i=0; i < buts.length; ++i) {
-        buts[i].addEventListener("click", setupFunc)
+      {
+        const buts = document.getElementsByTagName("button");
+        for (let i=0; i < buts.length; ++i) {
+          buts[i].addEventListener("click", setupFunc)
+        }
       }
-    }
 
-    eStop.setAttribute('disabled',"1");
+      eStop.setAttribute('disabled',"1");
 
-    const funcBpmMod = (e) => {
-      if (e.target.dataset.set) {
-        appChing.bpm = Number(e.target.dataset.set);
-      } else if (e.target.dataset.scale) {
-        appChing.bpm *= Number(e.target.dataset.scale);
-      } else {
-        appChing.bpm += Number(e.target.dataset.increment);
+      const funcBpmMod = (e) => {
+        if (e.target.dataset.set) {
+          appChing.bpm = Number(e.target.dataset.set);
+        } else if (e.target.dataset.scale) {
+          appChing.bpm *= Number(e.target.dataset.scale);
+        } else {
+          appChing.bpm += Number(e.target.dataset.increment);
+        }
+        eBpm.value = appChing.bpm;
+        onBpmChange(appChing.bpm);
       }
-      eBpm.value = appChing.bpm;
-      onBpmChange(appChing.bpm);
-    }
 
-    {
-      const buts = document.getElementsByClassName("bpm-mod");
-      for (let i=0; i < buts.length; ++i) {
-        buts[i].addEventListener("click", funcBpmMod);
+      {
+        const buts = document.getElementsByClassName("bpm-mod");
+        for (let i=0; i < buts.length; ++i) {
+          buts[i].addEventListener("click", funcBpmMod);
+        }
       }
-    }
 
-    onBpmChange(getBpm(eBpm.value));
+      onBpmChange(getBpm(eBpm.value));
 
-    const ePatternDrum = document.getElementById("pattern-drum") as HTMLFormElement;
-    ePatternDrum.addEventListener("change", e => onDrumPatternChange((e.target as HTMLFormElement).value));
+      const ePatternDrum = document.getElementById("pattern-drum") as HTMLFormElement;
+      ePatternDrum.addEventListener("change", e => onDrumPatternChange((e.target as HTMLFormElement).value));
 
-    [
-      ["pattern-none", ""],
-      ["pattern-lao", pleyngDahmLao],
-      ["pattern-khmen", pleyngDahmKhmen],
-      ["pattern-omdeuk", pleyngKhmenOmDteuk],
-      ["pattern-saiyork", pleyngKhmenSaiYork],
-      ["pattern-porttisut", pleyngKhmenPortTiSut],
-      ["pattern-jorakaehangyaow", pleyngJorakaeHangYaow],
-      ["pattern-gabber", patternGabber]
-    ].forEach(([id, pattern]) => {
-      document.getElementById(id).addEventListener("click", e => {
-        ePatternDrum.value = pattern;
-        onDrumPatternChange(ePatternDrum.value);
+      [
+        ["pattern-none", ""],
+        ["pattern-lao", pleyngDahmLao],
+        ["pattern-khmen", pleyngDahmKhmen],
+        ["pattern-omdeuk", pleyngKhmenOmDteuk],
+        ["pattern-saiyork", pleyngKhmenSaiYork],
+        ["pattern-porttisut", pleyngKhmenPortTiSut],
+        ["pattern-jorakaehangyaow", pleyngJorakaeHangYaow],
+        ["pattern-gabber", patternGabber]
+      ].forEach(([id, pattern]) => {
+        document.getElementById(id).addEventListener("click", e => {
+          ePatternDrum.value = pattern;
+          onDrumPatternChange(ePatternDrum.value);
+        })
       })
-    })
 
-    onDrumPatternChange(ePatternDrum.value);
+      onDrumPatternChange(ePatternDrum.value);
+    })
   })
 }

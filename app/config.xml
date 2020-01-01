@@ -4,11 +4,11 @@
     <name>เครื่องฉิ่ง</name>
     <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
-    <content src="index.html" />
 	<icon src="res/ching.png" />
 
-	<!-- Unfortunately, older Android versions' WebView doesn't have any support for the WebAudio APIs, and
-		 WebView is an updateable component only from 5.0.1 onwards. -->
+	<!-- Unfortunately, older Android versions' WebView doesn't have any support for the WebAudio APIs and so an
+		 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards, so that's the
+		 minimum version. -->
 	<preference name="android-minSdkVersion" value="21" />
 	<preference name="permissions" value="none" />
 

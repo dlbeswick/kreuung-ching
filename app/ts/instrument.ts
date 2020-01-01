@@ -311,9 +311,9 @@ namespace AppChing {
       console.assert(this._data, "load not called")
       return this._data
     }
-    
-    async load(ctx:AudioContext) {
-      const response = await fetch(this.url)
+
+    private async loadBrowser(url:string) {
+      const response = await fetch(url)
       const reader = response.body.getReader()
       let result = new Uint8Array()
       
@@ -328,13 +328,44 @@ namespace AppChing {
           result = next
         }
       }
-        
+      
       if (!response.ok) {
         console.debug(this._data)
         throw "Error getting sample at '" + response.url +"': " + response.status
       } else {
-        this._data = await ctx.decodeAudioData(result.buffer)
+        return result.buffer
       }
+    }
+    
+    load(ctx:AudioContext):Promise<void> {
+      let url:string
+      let methodFetch:Promise<ArrayBuffer>
+
+      if (cordova.platformId == 'browser') {
+        url = "data/" + this.url
+        methodFetch = this.loadBrowser(url)
+      } else {
+        url = cordova.file.applicationDirectory + "www/data/" + this.url
+
+        methodFetch = new Promise<any>((resolve, reject) => {
+          (window as any).resolveLocalFileSystemURL(url, resolve, e => reject(['resolveLocalFileSystemURL', e]))
+        }).then(fileEntry => new Promise<File>((resolve, reject) => {
+          fileEntry.file(resolve, reject)
+        })).then(file => new Promise<ArrayBuffer>((resolve, reject) => {
+          var reader = new FileReader()
+          reader.onload = (evt:ProgressEvent) => resolve(reader.result as ArrayBuffer)
+          reader.onerror = e => reject(['readAsArrayBuffer', e])
+          reader.readAsArrayBuffer(file)
+        }))
+      }
+
+      return methodFetch.then(buffer => new Promise<AudioBuffer>((resolve, reject) => {
+        ctx.decodeAudioData(buffer, resolve, e => reject(['decodeAudioData', e]))
+      })).then(data => {
+        this._data = data
+      }).catch(e => {
+        throw "Error getting sample at '" + url +"': " + JSON.stringify(e)
+      })
     }
   }
   

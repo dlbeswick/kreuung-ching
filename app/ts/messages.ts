@@ -8,7 +8,7 @@ namespace Messages {
   export let en: Messages = {
     name: "English",
     errorAudioContextAndroid: (e:Error) => {
-      return "There was a problem creating the AudioContext object. Please try updating the Android System Webview component. Error detail: " + e.message
+      return "There was a problem creating the AudioContext object. Please try updating Chrome or the Android System Webview component. Error detail: " + e.message
     },
     errorAudioContextWeb: (e:Error) => {
       return "There was a problem creating the AudioContext object. Please try updating your web browser. Error detail: " + e.message
