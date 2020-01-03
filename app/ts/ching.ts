@@ -41,23 +41,31 @@ namespace AppChing {
   window.onerror = errorHandler
 
   class AppChing {
-    analyser = false;
-    tick = 0;
-    idxPattern = 0;
-    tickStart = null;
-    tickTimeLast = null;
-    bpm = null;
-    tickPeriod = null;
-    currentTimeout = null;
-    playing = false;
-    setup = false;
-    timings = [];
-    drumPattern = "";
-    drumPatternNext = "";
-    eBpmJing = null;
+    analyser = false
+    tick = 0
+    idxPattern = 0
+    tickStart = null
+    tickTimeLast = null
+    bpm = null
+    tickPeriod = null
+    currentTimeout = null
+    playing = false
+    setup = false
+    timings = undefined
+    drumPattern = ""
+    drumPatternNext = ""
+    eBpmJing = null
+
+    debugTimings() {
+      if (this.timings == undefined)
+        this.timings = []
+      else
+        this.timings = undefined
+    }
   }
 
-  const appChing = new AppChing();
+  // Export just for debugging convenience
+  export const appChing = new AppChing();
 
   function bpmToTickPeriodMs(bpm) {
     return 60000.0 / bpm / 2
@@ -83,7 +91,8 @@ namespace AppChing {
     appChing.bpm = bpm;
     const oldPeriod = appChing.tickPeriod;
     appChing.tickPeriod = bpmToTickPeriodMs(bpm);
-    appChing.timings = []
+    if (appChing.timings != undefined)
+      appChing.timings = []
 
     // Tick times are calculated relative to a start time as I believe this improves precision due to the lack of
     // accumlating error from repeated additions to the base time.
@@ -430,21 +439,23 @@ namespace AppChing {
         (appChing.tickStart + appChing.tickPeriod * appChing.tick) - appChing.tickTimeLast
       );
 
-      if (appChing.timings.push(appChing.tickTimeLast) == 80) {
-        const timings = appChing.timings;
-        appChing.timings = []
+      if (appChing.timings != undefined && appChing.timings.push(appChing.tickTimeLast) == 80) {
+        const timings = appChing.timings
+        appChing.timings = undefined
 
         const diffs = [];
         for (i = 1; i < timings.length; ++i) {
           diffs.push(timings[i] - timings[i-1])
         }
 
-        console.debug("Tick  : " + appChing.tick)
-        console.debug("Ideal : " + appChing.tickPeriod)
-        console.debug("Mean  : " + diffs.reduce((acc, v) => acc + v, 0) / diffs.length)
+        let report = "Tick #: " + appChing.tick + "\n"
+        report += "Ideal tick period: " + appChing.tickPeriod + "\n"
+        report += "Mean tick period: " + diffs.reduce((acc, v) => acc + v, 0) / diffs.length + "\n"
 
         diffs.sort()
-        console.debug("Median: " + diffs[Math.floor(diffs.length/2)])
+        report += "Median tick period: " + diffs[Math.floor(diffs.length/2)]
+
+        alert(report)
       }
     }
 

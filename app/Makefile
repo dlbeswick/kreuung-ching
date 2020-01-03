@@ -26,7 +26,7 @@ www/js :
 www/css :
 	mkdir -p $@
 
-www/js/ching.js : ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts
+www/js/ching.js : ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/lib/rand.ts
 	"$(TYPESCRIPT)" --noEmitOnError --alwaysStrict --outFile $@ $<
 
 www/css/app.css : sass/app.scss

@@ -21,6 +21,8 @@
 
 /// <reference path="instrument.ts" />
 /// <reference path="shaper.ts" />
+/// <reference path="lib/rand.ts" />
+
 namespace AppChing {
   export abstract class GlongSet {
     abstract chingOpen():Instrument
@@ -122,6 +124,8 @@ namespace AppChing {
     _chingOpen:InstrumentSample
     _chingClosed:InstrumentSample
     _glongs:InstrumentSample[]
+    valsRnd:number[] = []
+    rand:Rand.RandLcg = new Rand.RandLcg()
     
     constructor(ctx:AudioContext, chups:Sample[], chings:Sample[], glongs:Sample[][]) {
       super()
@@ -136,21 +140,25 @@ namespace AppChing {
     chingOpen() { return this._chingOpen }
     chingClosed() { return this._chingClosed }
     glongs() { return this._glongs }
+
+    private sampleRandom(smps:Sample[]):Sample {
+      return smps[this.rand.irand(0, smps.length)]
+    }
     
     chup(time:number, gain:number):void {
-      this._chingClosed.sample = this.chups[Math.round(Math.random() * (this.chups.length-1))]
+      this._chingClosed.sample = this.sampleRandom(this.chups)
       super.chup(time, gain)
     }
     
     ching(time:number, gain:number):void {
-      this._chingOpen.sample = this.chings[Math.round(Math.random() * (this.chings.length-1))]
+      this._chingOpen.sample = this.sampleRandom(this.chings)
       super.ching(time, gain)
     }
 
     glong(time:number, gain:number, idx:number):void {
       console.assert(idx >= 0)
       if (idx < this._glongs.length) {
-        this._glongs[idx].sample = this.smpsGlong[idx][Math.round(Math.random() * (this.smpsGlong[idx].length-1))]
+        this._glongs[idx].sample = this.sampleRandom(this.smpsGlong[idx])
         super.glong(time, gain, idx)
       }
     }
