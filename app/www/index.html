@@ -85,30 +85,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 					</div>
 				</fieldset>
 				<fieldset id="glong">
-					<legend>กลอง</legend>
+				  <legend>กลอง</legend>
+				  <div>
+					<label>ชุดกลอง
+					  <select id="glongset">
+						<option value="sampled">ตัวอย่างเสียง</option>
+						<option value="synthesized">สังเคราะห์</option>
+					  </select>
+					</label>
+				  </div>
 					<div class="flexbox-wrap">
+					  <div>
+						<p>แบบเสียง</p>
+						<textarea id="pattern-drum" cols="25" rows="10"></textarea>
+					  </div>
+					  <div>
 						<div>
-							<p>แบบเสียง</p>
-							<textarea id="pattern-drum" cols="25" rows="10"></textarea>
+						  <label>ระดับเสียง<input id="vol-glong" type="range" min="0" max="100" value="50"></label>
 						</div>
 						<div>
-							<div>
-								<label>ระดับเสียง<input id="vol-glong" type="range" min="0" max="100" value="50"></label>
-							</div>
-							<div>
-								<label>การปรับเสียง<input id="tune-glong" type="range" min="0" max="100" value="50"></label>
-							</div>
+						  <label>การปรับเสียง<input id="tune-glong" type="range" min="0" max="100" value="50"></label>
 						</div>
-						<div id="pattern-select">
-							<button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
-							<button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
-							<button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
-							<button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
-							<button id="pattern-saiyork" type="button">เขมรไทรโยค</button>
-							<button id="pattern-porttisut" type="button">เขมรโพธิสัตว์</button>
-							<button id="pattern-jorakaehangyaow" type="button">จระเข้หางยาว</button>
-							<button id="pattern-gabber" type="button">แกบเบอร์</button>
-						</div>
+					  </div>
+					  <div id="pattern-select">
+						<button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
+						<button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
+						<button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
+						<button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
+						<button id="pattern-gabber" type="button">แกบเบอร์</button>
+					  </div>
 					</div>
 				</fieldset>
 				<fieldset>
@@ -121,10 +126,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 					<div id="instruments" class="buttonstrip-sml">
 						<button id="play-ching-closed" type="button">ฉิ่ง 0</button>
 						<button id="play-ching-open" type="button">ฉิ่ง 1</button>
-						<button id="play-drum-0" type="button">กลอง ทั่ม</button>
-						<button id="play-drum-1" type="button">กลอง ติง</button>
-						<button id="play-drum-2" type="button">กลอง โจ๊ะ</button>
-						<button id="play-drum-3" type="button">กลอง จ๋ง</button>
+						<button class="play-drum" type="button">กลอง ทั่ม</button>
+						<button class="play-drum" type="button">กลอง ติง</button>
+						<button class="play-drum" type="button">กลอง โจ๊ะ</button>
+						<button class="play-drum" type="button">กลอง จ๋ง</button>
 					</div>
 				</fieldset>
 			</form>

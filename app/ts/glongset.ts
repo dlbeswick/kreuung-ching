@@ -28,7 +28,8 @@ namespace AppChing {
     abstract chingOpen():Instrument
     abstract chingClosed():Instrument
     abstract glongs():Instrument[]
-    //abstract glong(idx:number):Instrument
+
+    async init() {}
     
     chup(time:number, gain:number):void {
       this.chingClosed().noteOn(time, gain)
@@ -43,8 +44,20 @@ namespace AppChing {
         this.glongs()[idx].noteOn(time, gain)
     }
 
+    instruments():Instrument[] {
+      return [this.chingOpen(), this.chingClosed()].concat(this.glongs())
+    }
+
     abstract connect(gainChing:AudioNode, gainGlong:AudioNode):void
     abstract disconnect():void
+    kill() {
+      for (let i of this.instruments())
+        i.kill(0)
+    }
+    detune(val:number) {
+      for (let i of this.glongs())
+        i.detune(val)
+    }
   }
 
   export class GlongSetSynthesized extends GlongSet {
@@ -54,6 +67,7 @@ namespace AppChing {
     distortionClosed:AudioNode
     gainChingOpen:GainNode
     ctx:AudioContext
+    drums:Instrument[]
     
     constructor(ctx) {
       super()
@@ -94,11 +108,59 @@ namespace AppChing {
       this.gainChingOpen = ctx.createGain()
       this.gainChingOpen.gain.value = 4
       distortionOpen.connect(this.gainChingOpen)
+      
+      this.drums = [
+        new InstrumentDrumFm(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {freqStart: 250, freqEnd: 78, decay: 0.5, attack: 0.04}
+          )
+        ),
+        new InstrumentDrumFm(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {freqStart: 300, freqEnd: 216, decay: 0.210, attack: 0.02, freqDecay: 0.035}
+          )
+        ),
+        new InstrumentDrumFm(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {gain: 0.50, freqStart: 155, freqEnd: 120, decay: 0.05, attack: 0.0, magStrike: 2000}
+          )
+        ),
+        new InstrumentDrumFm(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {freqStart: 470, freqEnd: 456, decay: 0.05, attack: 0.02, magStrike: 250}
+          )
+        ),
+        new InstrumentDrumGabber(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {gain: 3, freqStart: 200, freqEnd: 38, decay: 0.625, attack: 0.04, magFreqVary:0.25, magStrike: 250}
+          ),
+          2
+        ),
+        new InstrumentDrumGabber(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {gain: 3, freqStart: 200, freqEnd: 38, decay: 0.5, attack: 0.04, magFreqVary:0.25, magStrike: 250}
+          ),
+          10
+        ),
+        new InstrumentDrumGabber(
+          ctx,
+          ParamsInstrumentDrumFm.make(
+            {gain: 3, freqStart: 200, freqEnd: 38, decay: 0.5, attack: 0.04, magFreqVary:0.25, magStrike: 250}
+          ),
+          3000
+        )
+      ]
     }
-    
+
     chingOpen() { return this._chingOpen }
     chingClosed() { return this._chingClosed }
-    glongs() { return [] }
+    glongs() { return this.drums }
 
     ching(time, gain) {
       super.ching(time, gain)
@@ -106,14 +168,15 @@ namespace AppChing {
       this.chingOpen().noteOff((time || this.ctx.currentTime) + 0.1)
     }
     
-    connect(gainChing:AudioNode):void {
+    connect(gainChing:AudioNode, gainGlong:AudioNode):void {
       this.distortionClosed.connect(gainChing)
       this.gainChingOpen.connect(gainChing)
+      for (let g of this.drums) g.connect(gainGlong)
     }
 
     disconnect():void {
-      this.distortionClosed.disconnect()
-      this.gainChingOpen.disconnect()
+      for (let i of [this.distortionClosed, this.gainChingOpen]) i.disconnect()
+      for (let i of this.drums) i.disconnect()
     }
   }
 
@@ -126,9 +189,11 @@ namespace AppChing {
     _glongs:InstrumentSample[]
     valsRnd:number[] = []
     rand:Rand.RandLcg = new Rand.RandLcg()
+    ctx:AudioContext
     
     constructor(ctx:AudioContext, chups:Sample[], chings:Sample[], glongs:Sample[][]) {
       super()
+      this.ctx = ctx
       this._chingOpen = new InstrumentSample(ctx)
       this._chingClosed = new InstrumentSample(ctx)
       this.chups = chups
@@ -137,6 +202,14 @@ namespace AppChing {
       this.smpsGlong = glongs
     }
 
+    samples():Sample[] {
+      return this.chups.concat(this.chings).concat(this.smpsGlong.reduce((a,b) => a.concat(b)))
+    }
+    
+    async init() {
+      for (let p of this.samples().map(s => s.load(this.ctx))) await p
+    }
+    
     chingOpen() { return this._chingOpen }
     chingClosed() { return this._chingClosed }
     glongs() { return this._glongs }

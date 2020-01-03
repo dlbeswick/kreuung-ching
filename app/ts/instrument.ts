@@ -22,11 +22,12 @@
 /// <reference path="shaper.ts" />
 namespace AppChing {
   export abstract class Instrument {
-    abstract noteOn(time:number, gain:number):void
-    abstract noteOff(time:number):void
-    abstract kill(time:number):void
-    abstract connect(node:AudioNode|AudioParam):void
-    abstract disconnect():void
+    abstract noteOn(time:number, gain:number)
+    abstract noteOff(time:number)
+    abstract kill(time:number)
+    abstract connect(node:AudioNode|AudioParam)
+    abstract disconnect()
+    abstract detune(val:number)
   }
 
   // An instrument with a designated output node
@@ -76,6 +77,10 @@ namespace AppChing {
     disconnect() {
       for (let i of this.instruments()) i.disconnect()
     }
+
+    detune(val) {
+      for (let i of this.instruments()) i.detune(val)
+    }
   }
 
   export abstract class InstrumentNodeFm extends InstrumentOutput {
@@ -97,6 +102,10 @@ namespace AppChing {
       this.osc.frequency.value = freq
       this.osc.connect(this.nodeGain)
       this.osc.start()
+    }
+
+    detune(val) {
+      this.osc.detune.setTargetAtTime(val, 0, 0.01)
     }
   }
   
@@ -139,6 +148,7 @@ namespace AppChing {
     }
   }
 
+  // FM instrument with exponential volume envelope
   export class InstrumentNodeFmExp extends InstrumentNodeFm {
     cAttack:number
     tAttack:number
@@ -208,13 +218,12 @@ namespace AppChing {
     disconnect() {
       this.fmNodes[0].disconnect()
     }
+
+    detune(val) {
+      this.fmNodes[0].detune(val)
+    }
   }
 
-  interface Detunable {
-    // Note: generally only needed if system doesn't support constant source node.
-    detune(val:number)
-  }
-  
   export class ParamsInstrumentDrumFm {
     freqStart=225
     freqEnd=80
@@ -235,20 +244,15 @@ namespace AppChing {
     }
   }
   
-  export class InstrumentDrumFm extends InstrumentFm implements Detunable {
+  export class InstrumentDrumFm extends InstrumentFm {
     carrier:InstrumentNodeFm
     params:ParamsInstrumentDrumFm
     ctx:AudioContext
-
-    // Note: ConstantSourceNode not available on iOS
-    constructor(audioCtx:AudioContext, params:ParamsInstrumentDrumFm, tuning?:ConstantSourceNode) {
+    
+    constructor(audioCtx:AudioContext, params:ParamsInstrumentDrumFm) {
       const carrier = new InstrumentNodeFmLin(audioCtx, params.type, params.freqEnd, params.gain,
                                           params.attack, params.decay, 0, 0.0)
 
-      if (tuning) {
-        tuning.connect(carrier.osc.detune)
-      }
-      
       const freqStrike = params.freqStart/2
       const striker = new InstrumentNodeFmLin(audioCtx, 'square', freqStrike, params.magStrike, 0.0036, 0.05, 1, 0.0)
 
@@ -275,23 +279,19 @@ namespace AppChing {
       this.carrier.osc.frequency.exponentialRampToValueAtTime(this.params.freqEnd, time + this.params.freqDecay)
       super.noteOn(time, gain)
     }
-
-    detune(val) {
-      this.carrier.osc.detune.setTargetAtTime(val, 0, 0.01)
-    }
   }
 
-  export class InstrumentDrumGabber extends InstrumentOutput implements Detunable {
+  export class InstrumentDrumGabber extends InstrumentOutput {
     gain:GainNode
     drum:InstrumentDrumFm
     
-    constructor(audioCtx, params:ParamsInstrumentDrumFm, tuning?:ConstantSourceNode, overdrive=2) {
+    constructor(audioCtx, params:ParamsInstrumentDrumFm, overdrive=2) {
       super()
       
       this.gain = audioCtx.createGain()
       this.gain.gain.value = params.gain
 
-      this.drum = new InstrumentDrumFm(audioCtx, {...params, gain: overdrive} as ParamsInstrumentDrumFm, tuning)
+      this.drum = new InstrumentDrumFm(audioCtx, {...params, gain: overdrive} as ParamsInstrumentDrumFm)
       
       const shaper = makeShaper(audioCtx, [this.drum], [], 1, 1, 1, '1x', 50)
 
@@ -321,8 +321,7 @@ namespace AppChing {
 
   export class Sample {
     url:string
-    private _data:AudioBuffer
-    private promise:Promise<AudioBuffer>
+    private _data?:AudioBuffer
     
     constructor(url) {
       this.url = url
@@ -395,6 +394,7 @@ namespace AppChing {
     node?:AudioBufferSourceNode
     ctx:AudioContext
     sample?:Sample
+    _detune = 0.0
     
     constructor(ctx:AudioContext, sample?:Sample) {
       super()
@@ -409,19 +409,23 @@ namespace AppChing {
       if (this.sample) {
         this.node = this.ctx.createBufferSource()
         this.node.buffer = this.sample.data()
+        this.node.detune.value = this._detune
         this.node.connect(this.gain)
         this.node.start(time)
       }
     }
     
     noteOff(time:number):void {
-      if (this.node) {
+      if (this.node)
         this.node.stop(time)
-      }
     }
     
     kill(time:number):void {
       this.noteOff(time)
+    }
+
+    detune(val:number) {
+      this._detune = val
     }
   }
 }
