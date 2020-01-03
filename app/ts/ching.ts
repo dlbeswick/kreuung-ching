@@ -280,7 +280,7 @@ namespace AppChing {
         const chup0 = () => { this.glongSet.chup(0, 1); this.currentTimeout = window.setTimeout(chup1, 200) }
         const chup1 = () => {
           this.glongSet.chup(0, 1)
-          this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 4)
+          this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 8)
         }
         const chup2 = () => {
           this.glongSet.ching(0,1)
@@ -614,6 +614,7 @@ namespace AppChing {
               [document.getElementById("pattern-none"), ""],
               [document.getElementById("pattern-lao"), pleyngDahmLao],
               [document.getElementById("pattern-khmen"), pleyngDahmKhmen],
+              [document.getElementById("pattern-noyjaiyah"), dahmNoyJaiYah],
               [document.getElementById("pattern-omdeuk"), pleyngKhmenOmDteuk],
               [document.getElementById("pattern-gabber"), patternGabber]
             ]

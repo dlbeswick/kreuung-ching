@@ -22,6 +22,17 @@
 namespace AppChing {
   export const patternGabber="023231010xx1515234x26231";
 
+  export const dahmNoyJaiYah=
+    "x01xxxx01xx01xxx \n" +
+    "x01xxxx01xx01xxx \n" +
+    "x01xxxx01xx01xxx \n" +
+    "x01xxxx01xx01xxx \n" +
+    "\n"                  +
+    "x01xxxx01xx01xxx \n" +
+    "xx1xxxx01xx01xxx \n" +
+    "x0101xx01xx01xxx \n" +
+    "x01xxxx01xx01xxx \n" ;
+  
   export const pleyngDahmLao=
         "0x1x3x1x1xxx0x1x \n" +
         "0x1x3x1x1xxx0x1x \n" +
