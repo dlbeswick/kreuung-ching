@@ -93,7 +93,9 @@ namespace AppChing {
       ePlayGlongs:HTMLCollectionOf<Element>,
       bpmMods:HTMLCollectionOf<Element>,
       patternDrum:HTMLFormElement,
-      presetsDrumPattern:[HTMLElement,string][]
+      presetsDrumPattern:[HTMLElement,string][],
+      gainGlong:HTMLElement,
+      gainChing:HTMLElement
     ) {
       let audioCtx = null
       try {
@@ -268,7 +270,7 @@ namespace AppChing {
         }
         eStop.setAttribute('disabled',undefined);
         ePlay.removeAttribute('disabled');
-        document.getElementById("play-delay").removeAttribute('disabled');
+        ePlayDelay.removeAttribute('disabled');
         quietNoise.disconnect();
       }
 
@@ -329,8 +331,8 @@ namespace AppChing {
         ePlayGlongs[i].addEventListener("click", e => this.glongSet.glong(0, 1, i) );
 
       for (let [ctl, gain]
-           of [[document.getElementById('vol-glong'), this.gainGlong],
-               [document.getElementById('vol-ching'), this.gainChing]] as [HTMLElement,GainNode][]) {
+           of [[gainGlong, this.gainGlong],
+               [gainChing, this.gainChing]] as [HTMLElement,GainNode][]) {
         handleSliderUpdate(
           ctl,
           (alpha, init) => {
@@ -621,7 +623,9 @@ namespace AppChing {
               [document.getElementById("pattern-noyjaiyah"), dahmNoyJaiYah],
               [document.getElementById("pattern-omdeuk"), pleyngKhmenOmDteuk],
               [document.getElementById("pattern-gabber"), patternGabber]
-            ]
+            ],
+            document.getElementById('vol-glong'),
+            document.getElementById('vol-ching')
           ).then(() => {
             e.target.click()
             e.target.removeEventListener("click", setupFunc)
