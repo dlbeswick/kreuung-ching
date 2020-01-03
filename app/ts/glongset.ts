@@ -184,9 +184,8 @@ namespace AppChing {
     }
     
     connect(gainChing:AudioNode, gainGlong:AudioNode):void {
-      this.distortionClosed.connect(gainChing)
-      this.gainChingOpen.connect(gainChing)
-      for (let g of this.drums) g.connect(gainGlong)
+      for (let i of [this.distortionClosed, this.gainChingOpen]) i.connect(gainChing)
+      for (let i of this.drums) i.connect(gainGlong)
     }
 
     disconnect():void {
@@ -260,6 +259,7 @@ namespace AppChing {
     disconnect():void {
       this.chingOpen().disconnect()
       this.chingClosed().disconnect()
+      for (let g of this.glongs()) g.disconnect()
     }
   }
 }

@@ -38,7 +38,7 @@ run: build cordova-prepare
 run-emu: build cordova-prepare
 	"$(CORDOVA)" run android --emulator
 
-serve: build cordova-prepare
+serve: build browser
 	"$(CORDOVA)" run browser
 
 clean:

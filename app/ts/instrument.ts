@@ -407,6 +407,8 @@ namespace AppChing {
 
     noteOn(time:number, gain:number):void {
       if (this.sample) {
+        if (this.node)
+          this.node.disconnect()
         this.node = this.ctx.createBufferSource()
         this.node.buffer = this.sample.data()
         this.node.detune.value = this._detune
@@ -416,8 +418,9 @@ namespace AppChing {
     }
     
     noteOff(time:number):void {
-      if (this.node)
+      if (this.node) {
         this.node.stop(time)
+      }
     }
     
     kill(time:number):void {
