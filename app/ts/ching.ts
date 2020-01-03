@@ -323,8 +323,6 @@ namespace AppChing {
         gainMaster.disconnect(analyser)
       })
 
-      eAnalyserOff.setAttribute('disabled',undefined);
-
       ePlayChingOpen.addEventListener("click", e => this.glongSet.chup(0, 1) );
       ePlayChingClosed.addEventListener("click", e => this.glongSet.ching(0,1) );
       for (let i = 0; i < ePlayGlongs.length; ++i)
@@ -582,24 +580,20 @@ namespace AppChing {
 
   document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("deviceready", () => {
-      const ePlay = document.getElementById("play") as HTMLButtonElement
-      const eStop = document.getElementById("stop") as HTMLButtonElement
-      const eBpm = document.getElementById("bpm") as HTMLFormElement
-
       // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
       // original click event.
       const setupFunc = (e) => {
         if (!appChing) {
           appChing = new AppChing(
-            eBpm,
+            document.getElementById("bpm") as HTMLFormElement,
             document.getElementById("bpm-jing") as HTMLFormElement,
             document.getElementById('tune-glong') as HTMLFormElement
           )
           
           appChing.setup(
-            ePlay,
+            document.getElementById("play") as HTMLButtonElement,
             document.getElementById("play-delay") as HTMLButtonElement,
-            eStop,
+            document.getElementById("stop") as HTMLButtonElement,
             document.getElementById("analyser") as HTMLCanvasElement,
             document.getElementById("analyser-on") as HTMLButtonElement,
             document.getElementById("analyser-off") as HTMLButtonElement,
@@ -639,8 +633,6 @@ namespace AppChing {
           buts[i].addEventListener("click", setupFunc)
         }
       }
-
-      eStop.setAttribute('disabled',undefined);
     })
   })
 }
