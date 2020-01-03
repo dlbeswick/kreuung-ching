@@ -277,7 +277,11 @@ namespace AppChing {
         onStop()
         ePlay.setAttribute('disabled',undefined)
         eStop.removeAttribute('disabled')
-        const chup0 = () => { this.glongSet.chup(0, 1); this.currentTimeout = window.setTimeout(chup1, 200) }
+        const chup0 = () => {
+          this.glongSet.kill()
+          this.glongSet.chup(0, 1)
+          this.currentTimeout = window.setTimeout(chup1, 200)
+        }
         const chup1 = () => {
           this.glongSet.chup(0, 1)
           this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 8)
