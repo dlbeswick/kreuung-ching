@@ -199,7 +199,7 @@ namespace AppChing {
     
     constructor(fmNodes:InstrumentNodeFm[], connections?:number[][], gain=1) {
       super()
-      console.assert(fmNodes.length)
+      assert(fmNodes.length)
       
       this.fmNodes = fmNodes
       if (!connections) {
@@ -328,7 +328,7 @@ namespace AppChing {
     }
 
     data():AudioBuffer {
-      console.assert(this._data, "load not called")
+      assert(this._data, "load not called")
       return this._data
     }
 

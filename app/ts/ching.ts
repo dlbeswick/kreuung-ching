@@ -31,17 +31,28 @@ var device:any // filled by cordova
 namespace AppChing {
   const MSG = Messages.makeMultilingual([new Messages.MessagesThai(), new Messages.MessagesEnglish()])
 
-  function errorHandler(message, source?, lineno?, colno?, error?) {
-    alert(message)
+  function errorHandler(message, source?, lineno?, colno?, error?, showAlert=true) {
+    if (showAlert)
+      alert(message)
     document.getElementById("error").style.display = "block"
     document.getElementById("error").innerHTML = message + "<br/>" + "Line: " + lineno + "<br/>" + source
     return true
+  }
+
+  export function assert(test, message='', ...args) {
+    if (!test) {
+      for (let arg of args) {
+        message += JSON.stringify(arg) + " "
+      }
+      errorHandler(message, undefined, undefined, undefined, undefined, false)
+      console.assert(false, message, ...args)
+    }
   }
   
   window.onerror = errorHandler
 
   class AppChing {
-    analyser = false
+    analyserActive = false
     tick = 0
     idxPattern = 0
     tickStart = null
@@ -58,17 +69,40 @@ namespace AppChing {
     private glongSet?:GlongSet
     
     private audioCtx?:AudioContext
+    private analyser?:AnalyserNode
     private gainChing?:GainNode
     private gainGlong?:GainNode
+    private gainMaster?:GainNode
+    private quietNoise?:AudioBufferSourceNode
     
-    private eBpm:HTMLFormElement
-    private eBpmJing:HTMLFormElement
-    private tuneGlong:HTMLFormElement
+    private eBpm:HTMLInputElement
+    private eBpmJing:HTMLInputElement
+    private tuneGlong:HTMLInputElement
+    private eHong:HTMLInputElement
+    private eStop:HTMLButtonElement
+    private ePlay:HTMLButtonElement
+    private ePlayDelay:HTMLButtonElement
+    private eChingVises:HTMLElement[]
 
-    constructor(eBpm:HTMLFormElement, eBpmJing:HTMLFormElement, tuneGlong:HTMLFormElement) {
+    constructor(
+      eBpm:HTMLInputElement,
+      eBpmJing:HTMLInputElement,
+      tuneGlong:HTMLInputElement,
+      eHong:HTMLInputElement,
+      ePlay:HTMLButtonElement,
+      eStop:HTMLButtonElement,
+      ePlayDelay:HTMLButtonElement,
+      eChingVises:HTMLElement[]
+    ) {
       this.eBpm = eBpm
       this.eBpmJing = eBpmJing
       this.tuneGlong = tuneGlong
+      this.eHong = eHong
+      this.ePlay = ePlay
+      this.eStop = eStop
+      this.ePlayDelay = ePlayDelay
+      this.eChingVises = eChingVises
+      this.eStop.setAttribute('disabled',undefined)
     }
     
     debugTimings() {
@@ -79,20 +113,15 @@ namespace AppChing {
     }
     
     async setup(
-      ePlay:HTMLButtonElement,
-      ePlayDelay:HTMLButtonElement,
-      eStop:HTMLButtonElement,
       eAnalyser:HTMLCanvasElement,
       eAnalyserOn:HTMLButtonElement,
       eAnalyserOff:HTMLButtonElement,
-      eChingVises:HTMLElement[],
-      eHong:HTMLFormElement,
       eGlongSelect:HTMLSelectElement,
       ePlayChingClosed:HTMLButtonElement,
       ePlayChingOpen:HTMLButtonElement,
       ePlayGlongs:HTMLCollectionOf<Element>,
       bpmMods:HTMLCollectionOf<Element>,
-      patternDrum:HTMLFormElement,
+      patternDrum:HTMLTextAreaElement,
       presetsDrumPattern:[HTMLElement,string][],
       gainGlong:HTMLElement,
       gainChing:HTMLElement
@@ -108,20 +137,16 @@ namespace AppChing {
         }
       }
       this.audioCtx = audioCtx
-
-      for (let i=0; i < bpmMods.length; ++i) {
-        bpmMods[i].addEventListener("click", e => this.onBpmMod(e))
-      }
-
-      const gainMaster = audioCtx.createGain();
-      gainMaster.gain.value = 0.5;
-      gainMaster.connect(audioCtx.destination);
+      
+      this.gainMaster = audioCtx.createGain()
+      this.gainMaster.gain.value = 0.5
+      this.gainMaster.connect(audioCtx.destination)
 
       this.gainGlong = audioCtx.createGain()
-      this.gainGlong.connect(gainMaster)
+      this.gainGlong.connect(this.gainMaster)
 
       this.gainChing = audioCtx.createGain()
-      this.gainChing.connect(gainMaster)
+      this.gainChing.connect(this.gainMaster)
 
       eGlongSelect.addEventListener("change", () => this.onGlongsetChange(eGlongSelect.value))
       await this.onGlongsetChange(eGlongSelect.value)
@@ -131,9 +156,9 @@ namespace AppChing {
         this.glongSet.detune(this.glongSetDetune)
       })
       
-      const analyser = audioCtx.createAnalyser()
+      this.analyser = audioCtx.createAnalyser()
       try {
-        analyser.fftSize = 2048
+        this.analyser.fftSize = 2048
       } catch(e) {
         // iPhone has a max fft size 2048?
       }
@@ -143,159 +168,20 @@ namespace AppChing {
       const quietNoiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.25, audioCtx.sampleRate);
       const quietNoiseBufferData = quietNoiseBuffer.getChannelData(0);
       for (var i = 0; i < quietNoiseBuffer.length; i+=audioCtx.sampleRate / 100) {
-        quietNoiseBufferData[Math.floor(i)] = (-1 + Math.random() * 2) * 0.001;
+        quietNoiseBufferData[Math.floor(i)] = (-1 + Math.random() * 2) * 0.0001;
       }
-      const quietNoise = audioCtx.createBufferSource();
-      quietNoise.buffer = quietNoiseBuffer;
-      quietNoise.loop = true;
-      quietNoise.loopEnd = 0.25;
-      quietNoise.start();
+      this.quietNoise = audioCtx.createBufferSource()
+      this.quietNoise.buffer = quietNoiseBuffer
+      this.quietNoise.loop = true
+      this.quietNoise.loopEnd = 0.25
+      this.quietNoise.start()
 
-      const doPattern = (recurse=0) => {
-        // TODO: replace with parser...
-        if (this.drumPatternNext != null) {
-          this.drumPattern = appChing.drumPatternNext;
-          this.drumPatternNext = null;
-        }
-        const pattern = this.drumPattern
-        if (recurse > 100) {
-          onStop();
-        } else if (pattern.length > 0) {
-          const idxPattern = this.idxPattern % pattern.length
-          const drumNum = Number(pattern[idxPattern])
-          if (drumNum >= 0) {
-            this.glongSet.glong(0, 1, drumNum)
-            this.idxPattern += 1;
-          } else if (pattern.slice(idxPattern, idxPattern+3) == 'END') {
-            this.bpmRamp(Math.min(40, this.bpm * 0.5), 10 + Math.min(this.bpm-70) / 25, onStop);
-            this.idxPattern += 3;
-            doPattern(recurse+1);
-          } else if (pattern.slice(idxPattern, idxPattern+3) == 'BPM') {
-            this.idxPattern += 3;
+      this.bpm = Number(this.eBpm.value) || 70
+      
+      this.ePlay.addEventListener("click", this.onPlay.bind(this))
+      this.ePlayDelay.addEventListener("click", this.onPlayDelay.bind(this))
 
-            const match = pattern.slice(this.idxPattern, pattern.length).match(/^\d+/)
-            if (match) {
-              this.bpmRamp(Number(match[0]), 0.5);
-              this.idxPattern += match[0].length;
-            } else {
-              console.error("Bad BPM spec");
-            }
-
-            doPattern(recurse+1);
-          } else {
-            this.idxPattern += 1;
-          }
-        } else {
-          this.idxPattern += 1;
-        }
-      }
-
-      const onTick = () => {
-        if (!this.playing) {
-          return false;
-        }
-
-        this.tickTimeLast = window.performance.now()
-
-        if (this.tick % 8 == 0) {
-          this.glongSet.chup(0, 1)
-        } else if (this.tick % 8 == 4) {
-          this.glongSet.ching(0,1)
-        }
-
-        let currentTick = this.tick;
-        window.setTimeout(
-          () => {
-            eHong.value = Math.floor(currentTick / 4) + 1;
-            updateChingVis(eChingVises, Math.floor(currentTick / 2) % 4);
-          },
-          50 // TBD: let the user tune this -- no reliable latency measure is available
-        )
-
-        doPattern();
-
-        this.tick += 1;
-
-        this.currentTimeout = window.setTimeout(
-          onTick,
-          (this.tickStart + this.tickPeriod * this.tick) - this.tickTimeLast
-        );
-
-        if (this.timings != undefined && this.timings.push(this.tickTimeLast) == 80) {
-          const timings = this.timings
-          this.timings = undefined
-
-          const diffs = [];
-          for (i = 1; i < timings.length; ++i) {
-            diffs.push(timings[i] - timings[i-1])
-          }
-
-          let report = "Tick #: " + this.tick + "\n"
-          report += "Ideal tick period: " + this.tickPeriod + "\n"
-          report += "Mean tick period: " + diffs.reduce((acc, v) => acc + v, 0) / diffs.length + "\n"
-
-          diffs.sort()
-          report += "Median tick period: " + diffs[Math.floor(diffs.length/2)]
-
-          alert(report)
-        }
-      }
-
-      const onPlay = () => {
-        this.glongSet.kill()
-
-        this.onBpmChange(this.getBpm(this.eBpm.value));
-
-        this.tick = 0;
-        this.idxPattern = 0;
-        this.playing = true;
-        this.tickStart = window.performance.now();
-        eStop.removeAttribute('disabled');
-        ePlay.setAttribute('disabled',undefined);
-
-        quietNoise.connect(gainMaster);
-
-        if (this.analyser) {
-          gainMaster.connect(analyser)
-        }
-
-        onTick();
-      }
-
-      const onStop = () => {
-        this.playing = false;
-        if (this.currentTimeout) {
-          window.clearTimeout(this.currentTimeout);
-          this.currentTimeout = null;
-        }
-        eStop.setAttribute('disabled',undefined);
-        ePlay.removeAttribute('disabled');
-        ePlayDelay.removeAttribute('disabled');
-        quietNoise.disconnect();
-      }
-
-      ePlay.addEventListener("click", onPlay)
-      ePlayDelay.addEventListener("click", e => {
-        onStop()
-        ePlay.setAttribute('disabled',undefined)
-        eStop.removeAttribute('disabled')
-        const chup0 = () => {
-          this.glongSet.kill()
-          this.glongSet.chup(0, 1)
-          this.currentTimeout = window.setTimeout(chup1, 200)
-        }
-        const chup1 = () => {
-          this.glongSet.chup(0, 1)
-          this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 8)
-        }
-        const chup2 = () => {
-          this.glongSet.ching(0,1)
-          this.currentTimeout = window.setTimeout(onPlay, this.tickPeriod * 4)
-        }
-        chup0()
-      })
-
-      eStop.addEventListener("click", onStop)
+      this.eStop.addEventListener("click", this.onStop.bind(this))
 
       this.eBpm.addEventListener("change", e => {
         this.onBpmChange(this.getBpm(this.eBpm.value))
@@ -303,25 +189,26 @@ namespace AppChing {
         if (appChing.playing && appChing.currentTimeout) {
           window.clearTimeout(appChing.currentTimeout)
           appChing.currentTimeout = window.setTimeout(
-            onTick,
+            this.onTick.bind(this),
             (appChing.tickStart + appChing.tickPeriod * appChing.tick) - window.performance.now()
           );
         }
       })
 
       eAnalyserOn.addEventListener("click", e => {
-        appChing.analyser = true;
+        this.analyserActive = true
         eAnalyserOn.setAttribute('disabled',undefined);
         eAnalyserOff.removeAttribute('disabled');
-        gainMaster.connect(analyser)
-        window.requestAnimationFrame((time) => analyserDraw(time, analyser, eAnalyser.getContext('2d')))
+        this.gainMaster.connect(this.analyser)
+        window.requestAnimationFrame((time) => analyserDraw(time, this.analyser, eAnalyser.getContext('2d')))
       })
       eAnalyserOff.addEventListener("click", e => {
-        appChing.analyser = false;
+        this.analyserActive = false
         eAnalyserOff.setAttribute('disabled',undefined);
         eAnalyserOn.removeAttribute('disabled');
-        gainMaster.disconnect(analyser)
+        this.gainMaster.disconnect(this.analyser)
       })
+      eAnalyserOff.setAttribute('disabled',undefined)
 
       ePlayChingOpen.addEventListener("click", e => this.glongSet.chup(0, 1) );
       ePlayChingClosed.addEventListener("click", e => this.glongSet.ching(0,1) );
@@ -346,7 +233,7 @@ namespace AppChing {
         )
       }
 
-      patternDrum.addEventListener("change", e => this.onDrumPatternChange(patternDrum.value))
+      patternDrum.addEventListener("change", this.onDrumPatternChange.bind(this, patternDrum.value))
       
       for (let [element, pattern] of presetsDrumPattern) {
         element.addEventListener("click", () => {
@@ -356,13 +243,162 @@ namespace AppChing {
       }
 
       this.onDrumPatternChange(patternDrum.value)
+      
+      for (let i=0; i < bpmMods.length; ++i) {
+        bpmMods[i].addEventListener("click", e => this.onBpmMod(e))
+      }
     }
 
+    onPlayDelay() {
+      this.onStop()
+      this.ePlay.setAttribute('disabled',undefined)
+      this.eStop.removeAttribute('disabled')
+      const chup0 = () => {
+        this.glongSet.kill()
+        this.glongSet.chup(0, 1)
+        this.currentTimeout = window.setTimeout(chup1, 200)
+      }
+      const chup1 = () => {
+        this.glongSet.chup(0, 1)
+        this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 8)
+      }
+      const chup2 = () => {
+        this.glongSet.ching(0,1)
+        this.currentTimeout = window.setTimeout(() => this.onPlay(), this.tickPeriod * 4)
+      }
+      chup0()
+    }
+
+    doPattern(recurse=0) {
+      // TODO: replace with parser...
+      if (this.drumPatternNext != null) {
+        this.drumPattern = appChing.drumPatternNext;
+        this.drumPatternNext = null;
+      }
+      const pattern = this.drumPattern
+      if (recurse > 100) {
+        this.onStop()
+      } else if (pattern.length > 0) {
+        const idxPattern = this.idxPattern % pattern.length
+        const drumNum = Number(pattern[idxPattern])
+        if (drumNum >= 0) {
+          this.glongSet.glong(0, 1, drumNum)
+          this.idxPattern += 1;
+        } else if (pattern.slice(idxPattern, idxPattern+3) == 'END') {
+          this.bpmRamp(Math.min(40, this.bpm * 0.5), 10 + Math.min(this.bpm-70) / 25, () => this.onStop)
+          this.idxPattern += 3;
+          this.doPattern(recurse+1);
+        } else if (pattern.slice(idxPattern, idxPattern+3) == 'BPM') {
+          this.idxPattern += 3;
+
+          const match = pattern.slice(this.idxPattern, pattern.length).match(/^\d+/)
+          if (match) {
+            this.bpmRamp(Number(match[0]), 0.5);
+            this.idxPattern += match[0].length;
+          } else {
+            console.error("Bad BPM spec");
+          }
+
+          this.doPattern(recurse+1);
+        } else {
+          this.idxPattern += 1;
+        }
+      } else {
+        this.idxPattern += 1;
+      }
+    }
+
+    onPlay() {
+      this.glongSet.kill()
+
+      this.onBpmChange(this.getBpm(this.eBpm.value))
+
+      this.tick = 0
+      this.idxPattern = 0
+      this.playing = true
+      this.tickStart = window.performance.now()
+      this.eStop.removeAttribute('disabled')
+      this.ePlay.setAttribute('disabled',undefined)
+
+      this.quietNoise.connect(this.gainMaster)
+
+      if (this.analyserActive) {
+        this.gainMaster.connect(this.analyser)
+      }
+
+      this.onTick()
+    }
+
+    onStop() {
+      this.playing = false
+      if (this.currentTimeout) {
+        window.clearTimeout(this.currentTimeout)
+        this.currentTimeout = null
+      }
+      this.eStop.setAttribute('disabled',undefined)
+      this.ePlay.removeAttribute('disabled')
+      this.ePlayDelay.removeAttribute('disabled')
+      this.quietNoise.disconnect()
+    }
+
+    onTick():boolean {
+      if (!this.playing) {
+        return false
+      }
+
+      this.tickTimeLast = window.performance.now()
+
+      if (this.tick % 8 == 0) {
+        this.glongSet.chup(0, 1)
+      } else if (this.tick % 8 == 4) {
+        this.glongSet.ching(0,1)
+      }
+
+      let currentTick = this.tick
+      window.setTimeout(
+        () => {
+          this.eHong.value = (Math.floor(currentTick / 4) + 1).toString();
+          updateChingVis(this.eChingVises, Math.floor(currentTick / 2) % 4);
+        },
+        50 // TBD: let the user tune this -- no reliable latency measure is available
+      )
+
+      this.doPattern()
+
+      this.tick += 1;
+
+      this.currentTimeout = window.setTimeout(
+        () => this.onTick(),
+        (this.tickStart + this.tickPeriod * this.tick) - this.tickTimeLast
+      );
+
+      if (this.timings != undefined && this.timings.push(this.tickTimeLast) == 80) {
+        const timings = this.timings
+        this.timings = undefined
+
+        const diffs = [];
+        for (let i = 1; i < timings.length; ++i) {
+          diffs.push(timings[i] - timings[i-1])
+        }
+
+        let report = "Tick #: " + this.tick + "\n"
+        report += "Ideal tick period: " + this.tickPeriod + "\n"
+        report += "Mean tick period: " + diffs.reduce((acc, v) => acc + v, 0) / diffs.length + "\n"
+
+        diffs.sort()
+        report += "Median tick period: " + diffs[Math.floor(diffs.length/2)]
+
+        alert(report)
+      }
+      
+      return true
+    }
+    
     async onGlongsetChange(nameSet:string) {
       let glongSet:GlongSet
       
       switch (nameSet) {
-        case "sampled": {
+        case "sampled":
           glongSet = new GlongSetSampled(
             this.audioCtx,
             [
@@ -400,19 +436,20 @@ namespace AppChing {
           )
           
           break
-        }
-        case "synthesized": {
+        case "synthesized":
           glongSet = new GlongSetSynthesized(this.audioCtx)
           break
-        }
-        default: throw MSG.errorGlongsetBad(nameSet)
+        default:
+          throw MSG.errorGlongsetBad(nameSet)
       }
 
       await glongSet.init()
 
       // Drumsets should reset detune on set change
-      this.tuneGlong.value = 50
-      
+      this.tuneGlong.value = "50"
+
+      // Note: Javascript promises are asyncronous but not concurrent, so this block will only ever be executed by one
+      // process to completion. There is no danger here of loaded glongsets not having 'disconnect' called.
       if (this.glongSet) {
         this.glongSet.disconnect()
       }
@@ -421,7 +458,7 @@ namespace AppChing {
     }
     
     onBpmChange(bpm) {
-      console.assert(Number(bpm) != NaN)
+      assert(Number(bpm) != NaN)
 
       this.bpm = bpm
       const oldPeriod = appChing.tickPeriod
@@ -504,59 +541,53 @@ namespace AppChing {
 
   function analyserDraw(time, analyser, canvasCtx) {
     const updateFreq = (1/65) * 1000
+    const bufferFft = new Float32Array(analyser.frequencyBinCount)
 
-    const loop = (lastTime, time, analyser, canvasCtx, bufferImg, bufferFft) => {
-      const canvasWidth = canvasCtx.canvas.width;
-      const canvasHeight = canvasCtx.canvas.height;
+    const loop = (lastTime, time, bufferImgOld) => {
+      const canvasWidth = canvasCtx.canvas.width
+      const canvasHeight = canvasCtx.canvas.height
 
-      analyser.getFloatFrequencyData(bufferFft);
+      analyser.getFloatFrequencyData(bufferFft)
 
-      canvasCtx.putImageData(bufferImg, -1, 0);
-      bufferImg = canvasCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+      canvasCtx.putImageData(bufferImgOld, -1, 0)
+      const bufferImg = canvasCtx.getImageData(0, 0, canvasWidth, canvasHeight)
 
-      const dbMin = analyser.minDecibels;
-      const dbMax = analyser.maxDecibels;
-      const gainDb = 15;
-      const freqBinCount = analyser.frequencyBinCount;
-      const data = bufferImg.data;
-      const sampleRate = analyser.context.sampleRate;
-      var iImg = (canvasWidth - 1) * 4;
+      const dbMin = analyser.minDecibels
+      const dbMax = analyser.maxDecibels
+      const gainDb = 15
+      const freqBinCount = analyser.frequencyBinCount
+      const data = bufferImg.data
+      const sampleRate = analyser.context.sampleRate
+      var iImg = (canvasWidth - 1) * 4
 
       for (let y=0; y < canvasHeight; ++y) {
         const alpha = y/canvasHeight
         const iBin = Math.floor(Math.pow(1.0-alpha,3) * freqBinCount)
-        const fVal = bufferFft[iBin] + gainDb;
-        const iIntensity = 255 * (Math.max(Math.min(fVal, dbMax), dbMin) - dbMin) / (dbMax - dbMin);
+        const fVal = bufferFft[iBin] + gainDb
+        const iIntensity = 255 * (Math.max(Math.min(fVal, dbMax), dbMin) - dbMin) / (dbMax - dbMin)
 
-        data[iImg] = iIntensity;
-        data[iImg+1] = iIntensity;
-        data[iImg+2] = iIntensity;
+        data[iImg] = iIntensity
+        data[iImg+1] = iIntensity
+        data[iImg+2] = iIntensity
 
-        iImg += canvasWidth * 4;
+        iImg += canvasWidth * 4
       }
 
-      canvasCtx.putImageData(bufferImg, 0, 0, canvasWidth-1, 0, canvasWidth, canvasHeight);
+      canvasCtx.putImageData(bufferImg, 0, 0, canvasWidth-1, 0, canvasWidth, canvasHeight)
 
-      if (appChing.analyser) {
+      if (appChing.analyserActive) {
         window.setTimeout(
           () => window.requestAnimationFrame(
-            (time) => loop(time, time, analyser, canvasCtx, bufferImg, bufferFft)
+            (timeNew) => loop(time, timeNew, bufferImg)
           ),
           Math.max((lastTime + updateFreq) - time, 0)
         );
       }
     }
 
-    canvasCtx.fillRect(0, 0, 10000, 10000);
+    canvasCtx.fillRect(0, 0, 10000, 10000)
 
-    loop(
-      time,
-      time,
-      analyser,
-      canvasCtx,
-      canvasCtx.getImageData(0, 0, canvasCtx.canvas.width, canvasCtx.canvas.height),
-      new Float32Array(analyser.frequencyBinCount)
-    )
+    loop(time, time, canvasCtx.getImageData(0, 0, canvasCtx.canvas.width, canvasCtx.canvas.height))
   }
 
   function handleSliderUpdate(ctl, onChange:(alpha: number, init: boolean) => void) {
@@ -578,38 +609,116 @@ namespace AppChing {
     }
   }
 
+  export function programStateSerialize() {
+    const serialized = {"select":{}, "input":{}, "textarea": {}}
+    
+    {
+      const ser = serialized["input"]
+      const es = document.getElementsByTagName('input')
+      for (let i = 0; i < es.length; ++i) {
+        const e = es[i] as HTMLInputElement
+        ser[e.id] = e.value
+      }
+    }
+    
+    {
+      const ser = serialized["textarea"]
+      const es = document.getElementsByTagName('textarea')
+      for (let i = 0; i < es.length; ++i) {
+        const e = es[i]
+        assert(serialized[e.id] == undefined)
+        ser[e.id] = e.textContent
+      }
+    }
+      
+    {
+      const ser = serialized["select"]
+      const es = document.getElementsByTagName('select')
+      for (let i = 0; i < es.length; ++i) {
+        const e = es[i] as HTMLSelectElement
+        assert(ser[e.id] == undefined)
+        ser[e.id] = e.selectedIndex
+      }
+    }
+    
+    window.localStorage.setItem("state", JSON.stringify(serialized))
+  }
+  
+  export function programStateDeserialize() {
+    // Note: onchange not necessary, as the user will always need to provide input to reinitialize the audiocontext.
+    const serialized = JSON.parse(window.localStorage.getItem("state"))
+    if (serialized) {
+      {
+        const ser = serialized["input"]
+        const es = document.getElementsByTagName('input')
+        for (let i = 0; i < es.length; ++i) {
+          const e = es[i] as HTMLInputElement
+          if (ser[e.id] != undefined) {
+            e.value = ser[e.id]
+          }
+        }
+      }
+      
+      {
+        const ser = serialized["textarea"]
+        const es = document.getElementsByTagName('textarea')
+        for (let i = 0; i < es.length; ++i) {
+          const e = es[i]
+          if (ser[e.id] != undefined) {
+            e.textContent = ser[e.id]
+          }
+        }
+      }
+      
+      {
+        const ser = serialized["select"]
+        const es = document.getElementsByTagName('select')
+        for (let i = 0; i < es.length; ++i) {
+          const e = es[i] as HTMLSelectElement
+          if (ser[e.id] != undefined) {
+            e.selectedIndex = ser[e.id]
+          }
+        }
+      }
+    }
+  }
+  
   document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("pause", programStateSerialize)
+    document.addEventListener("resume", programStateDeserialize)
+    
     document.addEventListener("deviceready", () => {
-      // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
-      // original click event.
+      const allButtons = document.getElementsByTagName("button")
+      
       const setupFunc = (e) => {
+        assert(!appChing)
         if (!appChing) {
           appChing = new AppChing(
-            document.getElementById("bpm") as HTMLFormElement,
-            document.getElementById("bpm-jing") as HTMLFormElement,
-            document.getElementById('tune-glong') as HTMLFormElement
-          )
-          
-          appChing.setup(
+            document.getElementById("bpm") as HTMLInputElement,
+            document.getElementById("bpm-jing") as HTMLInputElement,
+            document.getElementById('tune-glong') as HTMLInputElement,
+            document.getElementById("hong") as HTMLInputElement,
             document.getElementById("play") as HTMLButtonElement,
-            document.getElementById("play-delay") as HTMLButtonElement,
             document.getElementById("stop") as HTMLButtonElement,
-            document.getElementById("analyser") as HTMLCanvasElement,
-            document.getElementById("analyser-on") as HTMLButtonElement,
-            document.getElementById("analyser-off") as HTMLButtonElement,
+            document.getElementById("play-delay") as HTMLButtonElement,
             [
               document.getElementById("ching-visualize-0"),
               document.getElementById("ching-visualize-1"),
               document.getElementById("ching-visualize-2"),
               document.getElementById("ching-visualize-3")
-            ],
-            document.getElementById("hong") as HTMLFormElement,
+            ]
+          )
+          
+          appChing.setup(
+            document.getElementById("analyser") as HTMLCanvasElement,
+            document.getElementById("analyser-on") as HTMLButtonElement,
+            document.getElementById("analyser-off") as HTMLButtonElement,
             document.getElementById("glongset") as HTMLSelectElement,
             document.getElementById("play-ching-closed") as HTMLButtonElement,
             document.getElementById("play-ching-open") as HTMLButtonElement,
             document.getElementsByClassName("play-drum"),
             document.getElementsByClassName("bpm-mod"),
-            document.getElementById("pattern-drum") as HTMLFormElement,
+            document.getElementById("pattern-drum") as HTMLTextAreaElement,
             [
               [document.getElementById("pattern-none"), ""],
               [document.getElementById("pattern-lao"), pleyngDahmLao],
@@ -621,17 +730,18 @@ namespace AppChing {
             document.getElementById('vol-glong'),
             document.getElementById('vol-ching')
           ).then(() => {
+            for (let i=0; i < allButtons.length; ++i) {
+              allButtons[i].removeEventListener("click", setupFunc)
+            }
             e.target.click()
-            e.target.removeEventListener("click", setupFunc)
           }).catch(errorHandler)
         }
       }
 
-      {
-        const buts = document.getElementsByTagName("button");
-        for (let i=0; i < buts.length; ++i) {
-          buts[i].addEventListener("click", setupFunc)
-        }
+      // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
+      // original click event.
+      for (let i=0; i < allButtons.length; ++i) {
+        allButtons[i].addEventListener("click", setupFunc)
       }
     })
   })

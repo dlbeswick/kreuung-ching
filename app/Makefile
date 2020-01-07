@@ -2,6 +2,8 @@ CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
 SASS = sass
 
+SRC = ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/lib/rand.ts ts/patterns.ts
+
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
 build: www/css/app.css www/js/ching.js | www/js www/css data
@@ -26,7 +28,7 @@ www/js :
 www/css :
 	mkdir -p $@
 
-www/js/ching.js : ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/lib/rand.ts
+www/js/ching.js : $(SRC)
 	"$(TYPESCRIPT)" --noEmitOnError --alwaysStrict --outFile $@ $<
 
 www/css/app.css : sass/app.scss

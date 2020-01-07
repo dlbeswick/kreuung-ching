@@ -39,20 +39,18 @@ namespace AppChing {
       this.chingOpen().noteOn(time, gain)
     }
     glong(time:number, gain:number, idx:number):void {
-      console.assert(idx >= 0)
+      assert(idx >= 0)
       if (idx < this.glongs().length) {
         // tbd: encode mutually exclusive instruments in data
         switch (idx) {
-          case 1: {
+          case 1:
             if (this.glongs().length > 2)
               this.glongs()[2].kill(0)
             break
-          }
-          case 2: {
+          case 2:
             if (this.glongs().length > 1)
               this.glongs()[1].kill(0)
             break
-          }
         }
         
         this.glongs()[idx].noteOn(time, gain)
@@ -243,7 +241,7 @@ namespace AppChing {
     }
 
     glong(time:number, gain:number, idx:number):void {
-      console.assert(idx >= 0)
+      assert(idx >= 0)
       if (idx < this._glongs.length) {
         this._glongs[idx].sample = this.sampleRandom(this.smpsGlong[idx])
         super.glong(time, gain, idx)
