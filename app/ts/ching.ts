@@ -223,7 +223,8 @@ namespace AppChing {
           (alpha, init) => {
             gain.gain.cancelScheduledValues(audioCtx.currentTime)
             // max volume is 5, allowing distortion
-            const vol = Math.pow(alpha, 5) * 5.0
+            // exponential is chosen so that 0.5**2.32193 == 1.0 (full volume on half-slider)
+            const vol = Math.pow(alpha, 2.32193) * 5.0
             if (!init) {
               gain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.2)
             } else {
@@ -432,7 +433,10 @@ namespace AppChing {
                 new Sample("sormchai-jorng-1.flac"),
                 new Sample("sormchai-jorng-2.flac")
               ]
-            ]
+            ],
+            0.75,
+            1.0,
+            1.0
           )
           
           break
