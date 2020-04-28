@@ -280,32 +280,34 @@ namespace AppChing {
       if (recurse > 100) {
         this.onStop()
       } else if (pattern.length > 0) {
-        const idxPattern = this.idxPattern % pattern.length
+        let idxPattern = this.idxPattern % pattern.length
+        if (pattern[idxPattern] == " ")
+          idxPattern = idxPattern + 1
         const drumNum = Number(pattern[idxPattern])
         if (drumNum >= 0) {
           this.glongSet.glong(0, 1, drumNum)
-          this.idxPattern += 1;
+          this.idxPattern = idxPattern + 1
         } else if (pattern.slice(idxPattern, idxPattern+3) == 'END') {
           this.bpmRamp(Math.min(40, this.bpm * 0.5), 10 + Math.min(this.bpm-70) / 25, () => this.onStop)
-          this.idxPattern += 3;
+          this.idxPattern = idxPattern + 3
           this.doPattern(recurse+1);
         } else if (pattern.slice(idxPattern, idxPattern+3) == 'BPM') {
-          this.idxPattern += 3;
+          this.idxPattern = idxPattern + 3
 
-          const match = pattern.slice(this.idxPattern, pattern.length).match(/^\d+/)
-          if (match) {
-            this.bpmRamp(Number(match[0]), 0.5);
-            this.idxPattern += match[0].length;
+          const match = pattern.slice(this.idxPattern).match(/^\d+/)
+          if (Number(match[0])) {
+            this.bpmRamp(Number(match[0]), 0.5)
+            this.idxPattern = this.idxPattern + match[0].length
           } else {
-            console.error("Bad BPM spec");
+            console.error("Bad BPM spec")
           }
 
-          this.doPattern(recurse+1);
+          this.doPattern(recurse+1)
         } else {
-          this.idxPattern += 1;
+          this.idxPattern = idxPattern + 1
         }
       } else {
-        this.idxPattern += 1;
+        this.idxPattern += 1
       }
     }
 
@@ -531,7 +533,7 @@ namespace AppChing {
     }
     
     onDrumPatternChange(value) {
-      appChing.drumPatternNext = value.replace(/^#.*/gm,'').replace(/\s/g,'')
+      appChing.drumPatternNext = value.replace(/^#.*/g,'').replace(/\s+/gm,' ')
       console.debug("Drum:\n" + appChing.drumPatternNext)
     }
   }
