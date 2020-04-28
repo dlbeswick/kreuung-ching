@@ -234,7 +234,7 @@ namespace AppChing {
         )
       }
 
-      patternDrum.addEventListener("change", this.onDrumPatternChange.bind(this, patternDrum.value))
+      patternDrum.addEventListener("change", () => this.onDrumPatternChange(patternDrum.value))
       
       for (let [element, pattern] of presetsDrumPattern) {
         element.addEventListener("click", () => {
