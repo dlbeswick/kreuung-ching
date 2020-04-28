@@ -294,9 +294,14 @@ namespace AppChing {
         } else if (pattern.slice(idxPattern, idxPattern+3) == 'BPM') {
           this.idxPattern = idxPattern + 3
 
-          const match = pattern.slice(this.idxPattern).match(/^\d+/)
-          if (Number(match[0])) {
-            this.bpmRamp(Number(match[0]), 0.5)
+          const match = pattern.slice(this.idxPattern).match(/^\d+%?/)
+          if (match[0]) {
+            const bpmNext =
+              match[0].endsWith("%")
+              ? (Number(match[0].slice(0,match[0].length-1)) / 100) * this.bpm
+              : Number(match[0])
+              
+            this.bpmRamp(bpmNext, 0.5)
             this.idxPattern = this.idxPattern + match[0].length
           } else {
             console.error("Bad BPM spec")
