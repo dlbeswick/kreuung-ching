@@ -70,6 +70,9 @@ export class DrumPattern {
   }
 
   tick(app:AppChing) {
+    if (!this.actions.length)
+      return
+    
     if (this.pattern && this._tick - this.patternTickStart < this.pattern.length) {
       const drum = Number(this.pattern[this._tick - this.patternTickStart])
       if (!Number.isNaN(drum)) {
@@ -501,7 +504,7 @@ class AppChing {
           setTimeout(() => { onStop(); this.onBpmChange(startBpm) }, 2000)
         }
       } else {
-        this.onBpmChange(startBpm + (i/updates)**2 * (endBpm - startBpm))
+        this.onBpmChange(startBpm + (i/updates) * (endBpm - startBpm))
         setTimeout(() => loop(i+1), 1000/updatesPerSec)
       }
     }
