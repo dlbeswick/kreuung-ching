@@ -2,18 +2,18 @@ CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
 SASS = sass
 
-SRC = ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/lib/rand.ts ts/patterns.ts
+SRC = ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/patterns.ts ts/lib/parser.ts ts/lib/rand.ts ts/parser_test.ts
 
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
-build: www/css/app.css www/js/ching.js | www/js www/css data
+build: www/css/app.css www/js/ching.js www/js www/css data
 
 data:
 	test -n "$(DATAPATH)" || { echo "No data path given"; exit 1 ; }
 	test -d www/data || mkdir www/data
 	rsync -rt --delete "$(DATAPATH)"* www/data/
 
-browser: cordova-prepare
+browser: build
 	"$(CORDOVA)" build browser
 
 cordova: cordova-prepare
@@ -28,8 +28,8 @@ www/js :
 www/css :
 	mkdir -p $@
 
-www/js/ching.js : $(SRC)
-	"$(TYPESCRIPT)" --noEmitOnError --alwaysStrict --outFile $@ $<
+www/js/ching.js: ts/*.ts ts/lib/*.ts
+	"$(TYPESCRIPT)" --noEmitOnError --target es2019 --module es2015 --outDir www/js ts/ching.ts ts/parser_test.ts
 
 www/css/app.css : sass/app.scss
 	"$(SASS)" $<:$@
