@@ -210,7 +210,7 @@ export const grammar = new Grammar(
         if (nodes.length == 2)
           return {action: "bpm", bpm: nodes[1].semantic(), time: time}
         else
-          return {action: "bpmFactor", factor: nodes[1].semantic() / 100, time: time}
+          return {action: "bpm", factor: nodes[1].semantic() / 100, time: time}
       }
 	),
 	new ParseRule(
