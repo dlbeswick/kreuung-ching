@@ -33,6 +33,8 @@ var device:any = (window as any).device
 
 const MSG = messages.makeMultilingual([new messages.MessagesThai(), new messages.MessagesEnglish()])
 
+const BEATS_PER_HONG = 2
+
 window.onerror = errorHandler
 
 export class DrumPattern {
@@ -94,7 +96,12 @@ export class DrumPattern {
           app.bpmRamp(bpmNext, this._tick == 0 ? 0 : Math.abs(bpmNext - app.bpm))
           break
         case "end":
-          app.bpmRamp(Math.min(40, app.bpm * 0.5), 10 + Math.min(app.bpm-70) / 25, () => app.onStop)
+          const bpmStart = this.bpm
+          const bpmEnd = Math.min(45, this.bpm/2)
+          const durHong = 2
+          const a = ((bpmEnd/60)**2 - (bpmStart/60)**2) / 2 / (durHong * BEATS_PER_HONG)
+          const t = ((bpmEnd/60) - (bpmStart/60)) / a
+          app.bpmRamp(bpmEnd, t, () => app.onStop)
           break
       }
       this.actionIdx = (this.actionIdx + 1) % this.actions.length
