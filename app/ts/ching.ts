@@ -99,9 +99,9 @@ export class DrumPattern {
           const bpmStart = this.bpm
           const bpmEnd = Math.min(45, this.bpm/2)
           const durHong = 2
-          const a = ((bpmEnd/60)**2 - (bpmStart/60)**2) / 2 / (durHong * BEATS_PER_HONG)
-          const t = ((bpmEnd/60) - (bpmStart/60)) / a
-          app.bpmRamp(bpmEnd, t, () => app.onStop)
+          const a = (bpmEnd**2 - bpmStart**2) / 2 / (durHong * BEATS_PER_HONG)
+          const durMins = (bpmEnd - bpmStart) / a
+          app.bpmRamp(bpmEnd, durMins * 60, () => app.onStop)
           break
       }
       this.actionIdx = (this.actionIdx + 1) % this.actions.length
