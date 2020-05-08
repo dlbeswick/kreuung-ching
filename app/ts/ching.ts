@@ -73,8 +73,11 @@ export class DrumPattern {
       if (action.length) {
         if (tick >= this._tick && tick < this._tick + action.length) {
           this.pattern = action.pattern
-          this.patternIdx = tick - this._tick
-          this._tick = tick
+          this.patternIdx = 0
+          while (this._tick != tick) {
+            if (this.pattern[this.patternIdx++] != '.')
+              ++this._tick
+          }
           break
         } else {
           this._tick += action.length
@@ -121,7 +124,7 @@ export class DrumPattern {
         : undefined
       
       if (!Number.isNaN(drum)) {
-        app.glongSet.glong(0, register == '.' ? 0.3 : 1.0, drum)
+        app.glongSet.glong(0, register == '.' ? 0.1 : 1.0, drum)
       }
 
       this.patternIdx += register ? 2 : 1
@@ -516,18 +519,20 @@ class AppChing {
     // Tick times are calculated relative to a start time as this improves precision due to the lack of
     // accumlating error from repeated additions to the base time.
     if (this.playing && this.tick != 0) {
-      const now = window.performance.now()
       const thisTickTime = this.tickStart + oldPeriod * (this.tick-1)
       const newTickTime = thisTickTime + this.tickPeriod
       this.tickStart = newTickTime - this.tickPeriod * this.tick
 
       // re-calculate next tick time
-      const newNextTick = Math.max(0, newTickTime - now)
+      // Only re-trigger the tick if there's a sufficiently large delta, otherwise the asynchronous event may
+      // be triggered even before the timeout is cleared, resulting in a double-trigger. For small deltas, the
+      // difference isn't noticable anyway, and may even be wrong due to browser time precision fuzzing.
+      const newNextTick = Math.max(0, newTickTime - window.performance.now())
       if (this.currentTimeout && newNextTick > 100) {
         window.clearTimeout(this.currentTimeout)
         this.currentTimeout = window.setTimeout(
           this.onTick.bind(this),
-          Math.max(0, newTickTime - now)
+          newNextTick
         );
       }
     }
