@@ -124,12 +124,12 @@ export const pleyngKhmenOmDteuk="# เขมรอมตึ๊ก ท่อน �
   "xxxxxxxx xxxxxxxx\n"+
   "\n";
 
-const actionEnd = {action: "end"}
 export const grammar = new Grammar(
   [
 	new TerminalRegex("REST", /^x/i, undefined, 'x'),
 	new TerminalRegex("SPACE", /^\s+/),
 	new TerminalRegex("DIGIT", /^\d/, 0),
+	new TerminalLit("PERIOD", "."),
 	new TerminalLit("PERCENT", "%"),
 	new TerminalLit("SLASH", "/"),
 	new TerminalRegex("BPM", /^BPM/i),
@@ -177,24 +177,27 @@ export const grammar = new Grammar(
 	new ParseRule(
 	  'drumpattern',
 	  [
+        ['DIGIT', 'PERIOD', 'drumpattern'],
         ['DIGIT', 'drumpattern'],
         ['REST', 'drumpattern'],
         ['whitespace', 'drumpattern'],
+        ['DIGIT', 'PERIOD'],
         ['DIGIT'],
         ['REST']
       ],
 	  (nodes) => {
         let pattern = ""
 		while (true) {
-		  pattern += nodes[0].lexeme ?? ''
-		  if (nodes.length == 2) {
-			nodes = nodes[1].nodes
+          for (const n of nodes)
+		    pattern += n.lexeme ?? ''
+		  if (nodes[nodes.length-1].nodes) {
+			nodes = nodes[nodes.length-1].nodes
 		  } else {
 			break
 		  }
 		}
 
-        return { action: "drumpattern", pattern: pattern, length: pattern.length }
+        return { action: "drumpattern", pattern: pattern, length: pattern.replace(/[^0-9x]/g,'').length }
       }
 	),
 	new ParseRule(
@@ -206,19 +209,19 @@ export const grammar = new Grammar(
         ['BPM', 'number'],
       ],
 	  (nodes) => {
-        const time = nodes.length > 3 ? nodes[nodes.length-1].semantic() : 15
-        if (nodes.length == 2)
-          return {action: "bpm", bpm: nodes[1].semantic(), time: time}
+        const value = nodes[1].semantic()
+        const time = nodes[nodes.length-1]?.semantic()
+        if (nodes.length == 2 || nodes.length == 4)
+          return {action: "bpm", bpm: value, time: time}
         else
-          return {action: "bpm", factor: nodes[1].semantic() / 100, time: time}
+          return {action: "bpm", factor: value / 100, time: time}
       }
 	),
 	new ParseRule(
 	  'end',
-	  [['END']],
-	  (_) => actionEnd
+	  [['END', 'SLASH', 'number'],
+       ['END']],
+	  (nodes) => ({action: "end", time: nodes[2]?.semantic()})
 	)
   ]
 )
-
-

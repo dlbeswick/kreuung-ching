@@ -49,7 +49,7 @@ export class DrumPattern {
   // one state for iterating through drum patterns. This choice was made because I didn't want to create one
   // object per note during the parsing phase, to save memory.
   private pattern?:string
-  private patternTickStart = 0
+  private patternIdx = 0
   private actionIdx = -1
   private lengthTicks:number
   private _tick:number = -1
@@ -71,10 +71,10 @@ export class DrumPattern {
         break
       this.doAction(app, action)
       if (action.length) {
-        if (tick < this._tick + action.length) {
-          this.pattern = action.pattern.slice(tick - this._tick)
+        if (tick >= this._tick && tick < this._tick + action.length) {
+          this.pattern = action.pattern
+          this.patternIdx = tick - this._tick
           this._tick = tick
-          this.patternTickStart = this._tick
           break
         } else {
           this._tick += action.length
@@ -88,12 +88,12 @@ export class DrumPattern {
     switch (action.action) {
       case "drumpattern":
         this.pattern = action.pattern
-        this.patternTickStart = this._tick
+        this.patternIdx = 0
         return false
       case "bpm":
         const bpmEnd = action.factor ? app.bpm * action.factor : action.bpm
         app.bpmRamp(bpmEnd,
-                    app.tick == 0 ? 0 : bpmRampSeconds(app.bpm, bpmEnd, action.time))
+                    (this._tick % this.lengthTicks) == 0 ? 0 : bpmRampSeconds(app.bpm, bpmEnd, action.time ?? 6))
         return true
       case "end":
         if (!app.ending) {
@@ -102,7 +102,7 @@ export class DrumPattern {
           const bpmEnd = Math.min(45, app.bpm/2)
           
           // 6 and a bit hong of slowing (end on chup)
-          app.bpmRamp(bpmEnd, bpmRampSeconds(app.bpm, bpmEnd, 6.1), app.onStop.bind(app))
+          app.bpmRamp(bpmEnd, bpmRampSeconds(app.bpm, bpmEnd, (action.time ?? 6) + 0.1), app.onStop.bind(app))
           return true
         }
     }
@@ -113,12 +113,21 @@ export class DrumPattern {
       return
     
     if (this.pattern) {
-      const drum = Number(this.pattern[this._tick - this.patternTickStart])
+      const drum = Number(this.pattern[this.patternIdx])
+      
+      const register =
+        this.pattern[this.patternIdx + 1] != 'x' && Number.isNaN(Number(this.pattern[this.patternIdx + 1]))
+        ? this.pattern[this.patternIdx + 1]
+        : undefined
+      
       if (!Number.isNaN(drum)) {
-        app.glongSet.glong(0, 1, drum)
+        app.glongSet.glong(0, register == '.' ? 0.3 : 1.0, drum)
       }
+
+      this.patternIdx += register ? 2 : 1
       ++this._tick
-      if (this._tick == this.patternTickStart + this.pattern.length) {
+      
+      if (this.patternIdx == this.pattern.length) {
         this.pattern = undefined
         this.actionIdx = (this.actionIdx + 1) % this.actions.length
       }
@@ -142,7 +151,8 @@ class AppChing {
   tickTimeLast = null
   bpm = null
   tickPeriod = null
-  currentTimeout?:any
+  currentTimeout?:number
+  timeoutBpmRamp?:number
   playing = false
   ending = false
   timings = undefined
@@ -170,6 +180,10 @@ class AppChing {
     private readonly eChingVises:HTMLElement[]
   ) {
     this.eStop.setAttribute('disabled',undefined)
+  }
+
+  timeouts():Array<number|undefined> {
+    return [this.currentTimeout, this.timeoutBpmRamp]
   }
   
   debugTimings() {
@@ -252,14 +266,6 @@ class AppChing {
 
     this.eBpm.addEventListener("change", e => {
       this.onBpmChange(this.getBpm(this.eBpm.value))
-      // re-calculate next tick time after bpm change
-      if (appChing.playing && appChing.currentTimeout) {
-        window.clearTimeout(appChing.currentTimeout)
-        appChing.currentTimeout = window.setTimeout(
-          this.onTick.bind(this),
-          (appChing.tickStart + appChing.tickPeriod * appChing.tick) - window.performance.now()
-        );
-      }
     })
 
     eAnalyserOn.addEventListener("click", e => {
@@ -338,7 +344,6 @@ class AppChing {
   }
 
   doPattern() {
-    // TODO: replace with parser...
     if (this.drumPatternNext != null) {
       this.drumPattern = appChing.drumPatternNext
       this.drumPattern.seek(this, this.tick)
@@ -353,7 +358,7 @@ class AppChing {
     this.onBpmChange(this.getBpm(this.eBpm.value))
 
     this.tick = 0
-    this.drumPattern?.seek(this, this.tick)
+    this.drumPattern?.seek(this, 0)
     this.playing = true
     this.tickStart = window.performance.now()
     this.eStop.removeAttribute('disabled')
@@ -371,9 +376,8 @@ class AppChing {
   onStop() {
     this.ending = false
     this.playing = false
-    if (this.currentTimeout) {
-      window.clearTimeout(this.currentTimeout)
-      this.currentTimeout = null
+    for (const t of this.timeouts()) {
+      window.clearTimeout(t)
     }
     this.eStop.setAttribute('disabled',undefined)
     this.ePlay.removeAttribute('disabled')
@@ -387,7 +391,7 @@ class AppChing {
     }
 
     this.tickTimeLast = window.performance.now()
-
+    
     if (this.tick % 8 == 0) {
       this.glongSet.chup(0, 1)
     } else if (this.tick % 8 == 4) {
@@ -405,10 +409,10 @@ class AppChing {
 
     this.doPattern()
 
-    this.tick += 1;
+    this.tick += 1
 
     this.currentTimeout = window.setTimeout(
-      () => this.onTick(),
+      this.onTick.bind(this),
       (this.tickStart + this.tickPeriod * this.tick) - this.tickTimeLast
     );
 
@@ -504,30 +508,35 @@ class AppChing {
     assert(!Number.isNaN(Number(bpm)))
 
     this.bpm = bpm
-    const oldPeriod = appChing.tickPeriod
+    const oldPeriod = this.tickPeriod
     this.tickPeriod = bpmToTickPeriodMs(bpm)
     if (this.timings != undefined)
       this.timings = []
 
-    // Tick times are calculated relative to a start time as I believe this improves precision due to the lack of
+    // Tick times are calculated relative to a start time as this improves precision due to the lack of
     // accumlating error from repeated additions to the base time.
-    //
-    // Adjust the relative time as if the new tick period had been playing for 'current tick' ticks.
-    // It's also important to include the fractional tick amount accumulated since the current tick began.
-    // Note the "currently playing" tick is appChing.tick - 1.
-    if (this.playing) {
+    if (this.playing && this.tick != 0) {
       const now = window.performance.now()
-      const elapsedTime = now - this.tickStart
-      const currentTickAtNewPeriod = elapsedTime / this.tickPeriod
-      const tickDiff = currentTickAtNewPeriod - (Math.max(0, this.tick - 1) + (now - this.tickTimeLast) / oldPeriod)
-      this.tickStart += tickDiff * this.tickPeriod
-    }
+      const thisTickTime = this.tickStart + oldPeriod * (this.tick-1)
+      const newTickTime = thisTickTime + this.tickPeriod
+      this.tickStart = newTickTime - this.tickPeriod * this.tick
 
+      // re-calculate next tick time
+      const newNextTick = Math.max(0, newTickTime - now)
+      if (this.currentTimeout && newNextTick > 100) {
+        window.clearTimeout(this.currentTimeout)
+        this.currentTimeout = window.setTimeout(
+          this.onTick.bind(this),
+          Math.max(0, newTickTime - now)
+        );
+      }
+    }
+    
     this.eBpmJing.value = this.bpm
   }
   
   bpmRamp(endBpm, time, onStop=null) {
-    window.clearTimeout(this.currentTimeout)
+    window.clearTimeout(this.timeoutBpmRamp)
     
     const startBpm = this.bpm
     const updatesPerSec = 10
@@ -541,7 +550,7 @@ class AppChing {
         }
       } else {
         this.onBpmChange(startBpm + (i/updates) * (endBpm - startBpm))
-        this.currentTimeout = setTimeout(() => loop(i+1), 1000/updatesPerSec)
+        this.timeoutBpmRamp = window.setTimeout(() => loop(i+1), 1000/updatesPerSec)
       }
     }
 
