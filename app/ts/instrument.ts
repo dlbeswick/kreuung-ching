@@ -414,6 +414,7 @@ export class InstrumentSample extends InstrumentOutput {
       this.node.buffer = this.sample.data()
       this.node.detune.value = this._detune
       this.node.connect(this.gain)
+      this.gain.gain.value = gain
       this.node.start(time)
     }
   }
