@@ -1,6 +1,6 @@
 import { assert } from "./lib/assert.js"
 
-const BEATS_PER_HONG = 2
+export const BEATS_PER_HONG = 2
 
 function bpmToTickPeriodMs(bpm) {
   return 60000.0 / bpm / 2
@@ -64,6 +64,8 @@ export class BpmControl {
     this.eBpmJing.value = this._bpm.toString()
   }
 
+  ticksPerBeat() { return 2 }
+  ticksPerHong() { return BEATS_PER_HONG * this.ticksPerBeat() }
   bpm() { return this._bpm }
   tick() { return this._tick }
   playing() { return this._playing }
