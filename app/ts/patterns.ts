@@ -19,7 +19,11 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { BpmControl } from './bpm.js';
+import { GlongSet } from "./glongset.js"
 import { Grammar, ParseRule, TerminalLit, TerminalRegex } from './lib/parser.js';
+
+import { assert } from "./lib/assert.js"
 
 export const patternGabber="023231010xx1515234x26231";
 
@@ -124,6 +128,120 @@ export const pleyngKhmenOmDteuk="# เขมรอมตึ๊ก ท่อน �
   "xxxxxxxx xxxxxxxx\n"+
   "\n";
 
+// Drum patterns are working as a state-machine -- one state for instantaneous actions like BPM changes and
+// one state for iterating through drum patterns. This choice was made because I didn't want to create one
+// object per note during the parsing phase, to save memory.
+export class SegmentAction {
+  instants:ActionInstant[] = []
+  span?:ActionTimespan
+  
+  constructor(span?:ActionTimespan) {
+    this.span = span
+  }
+}
+
+export interface ActionInstant {
+  run(bpm:BpmControl, isFirstTick:boolean)
+}
+
+export interface ActionTimespan {
+  tick(glongSet:GlongSet):boolean
+  seek(tickRelative:number):void
+  length():number
+}
+
+class ActionWait implements ActionTimespan {
+  private _tick:number
+  constructor(private readonly _length:number) {}
+
+  seek(tickRelative:number):void {
+    assert(this._tick < this.length())
+    this._tick = tickRelative
+  }
+
+  length() { return this._length }
+  
+  tick():boolean {
+    return this._tick++ < this.length()
+  }
+}
+
+abstract class ActionBpm implements ActionInstant {
+  constructor(private readonly time?:number) {}
+
+  abstract bpmEnd(bpm:number):number
+  
+  run(bpm:BpmControl, isFirstTick:boolean) {
+    const bpmEnd = this.bpmEnd(bpm.bpm())
+    bpm.bpmRampHongs(bpmEnd, isFirstTick ? 0 : this.time ?? 6)
+  }
+}
+
+class ActionBpmAbsolute extends ActionBpm {
+  constructor(private readonly bpm:number, time?:number) {
+    super(time)
+  }
+
+  bpmEnd(bpm:number):number { return this.bpm }
+}
+
+class ActionBpmFactor extends ActionBpm {
+  constructor(private readonly factor:number, time?:number) {
+    super(time)
+  }
+
+  bpmEnd(bpm:number):number { return bpm * this.factor }
+}
+
+class ActionEnd implements ActionInstant {
+  constructor(private readonly time:number = 6) {}
+
+  run(bpm:BpmControl, isFirstTick:boolean) {
+    // Add a bit of hong of slowing (end on chup, default 6 hong)
+    bpm.end(this.time + 0.1)
+  }
+}
+
+class ActionDrumPattern implements ActionTimespan {
+  private readonly _length:number
+  private idx:number = 0
+
+  private static readonly registers = /[^0-9x]/g
+  
+  constructor(private readonly pattern:string) {
+    this._length = pattern.replace(ActionDrumPattern.registers,'').length    
+  }
+
+  seek(tickRelative:number):void {
+    assert(tickRelative < this._length)
+    this.idx = 0
+    for (let tick = 0; tick != tickRelative; ++this.idx) {
+      if (!ActionDrumPattern.registers.exec(this.pattern[this.idx])) {
+        ++tick
+      }
+    }
+  }
+  
+  length() { return this._length }
+  
+  tick(glongSet:GlongSet):boolean {
+    assert(this.idx <= this.pattern.length)
+    if (this.idx == this.pattern.length) {
+      return true
+    } else {
+      const action = this.pattern[this.idx]
+      if (action == 'x') {
+        ++this.idx
+      } else {
+        const register = ActionDrumPattern.registers.exec(this.pattern[this.idx + 1] ?? '')
+        glongSet.glong(0, register && register[0] == '.' ? 0.1 : 1.0, Number(action))
+        this.idx += register ? 2 : 1
+      }
+      return false
+    }    
+  }
+}
+
 export const grammar = new Grammar(
   [
 	new TerminalRegex("REST", /^x/i, undefined, 'x'),
@@ -134,6 +252,7 @@ export const grammar = new Grammar(
 	new TerminalLit("SLASH", "/"),
 	new TerminalRegex("BPM", /^BPM/i),
 	new TerminalRegex("END", /^END/i),
+	new TerminalRegex("WAIT", /^WAIT/i),
 	new TerminalRegex("COMMENT", /^#.*/),
   ],
   [
@@ -145,8 +264,9 @@ export const grammar = new Grammar(
 		['drumpattern'],
 		['bpm'],
 		['end'],
+		['wait'],
 	  ],
-	  (nodes) => nodes[0].semantic()
+	  (nodes, ctx) => nodes[0].semantic(ctx)
 	),
 	new ParseRule(
 	  'whitespace',
@@ -185,7 +305,7 @@ export const grammar = new Grammar(
         ['DIGIT'],
         ['REST']
       ],
-	  (nodes) => {
+	  (nodes, ctx) => {
         let pattern = ""
 		while (true) {
           for (const n of nodes)
@@ -197,7 +317,11 @@ export const grammar = new Grammar(
 		  }
 		}
 
-        return { action: "drumpattern", pattern: pattern, length: pattern.replace(/[^0-9x]/g,'').length }
+        const action = new ActionDrumPattern(pattern)
+        if (ctx[ctx.length-1]?.span)
+          ctx.push(new SegmentAction(action))
+        else
+          ctx[ctx.length-1].span = action
       }
 	),
 	new ParseRule(
@@ -208,20 +332,31 @@ export const grammar = new Grammar(
 		['BPM', 'number', 'PERCENT'],
         ['BPM', 'number'],
       ],
-	  (nodes) => {
+	  (nodes, ctx) => {
         const value = nodes[1].semantic()
         const time = nodes[nodes.length-1]?.semantic()
         if (nodes.length == 2 || nodes.length == 4)
-          return {action: "bpm", bpm: value, time: time}
+          ctx[ctx.length-1].instants.push(new ActionBpmAbsolute(value, time))
         else
-          return {action: "bpm", factor: value / 100, time: time}
+          ctx[ctx.length-1].instants.push(new ActionBpmFactor(value / 100, time))
       }
 	),
 	new ParseRule(
 	  'end',
 	  [['END', 'SLASH', 'number'],
        ['END']],
-	  (nodes) => ({action: "end", time: nodes[2]?.semantic()})
+	  (nodes, ctx:SegmentAction[]) => ctx[ctx.length-1].instants.push(new ActionEnd(nodes[2]?.semantic()))
+	),
+	new ParseRule(
+	  'wait',
+	  [['WAIT', 'number']],
+	  (nodes, ctx:SegmentAction[]) => {
+        const action = new ActionWait(nodes[1].semantic())
+        if (ctx[ctx.length-1].span)
+          ctx.push(new SegmentAction(action))
+        else
+          ctx[ctx.length-1].span = action
+      }
 	)
   ]
 )

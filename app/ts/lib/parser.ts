@@ -117,8 +117,8 @@ class AstNode<T> {
   constructor(readonly rule?:ParseRule<T>, readonly nodes?:AstNode<T>[], readonly lexeme?:string) {
   }
 
-  semantic():T  {
-    return this.rule?.semantic(this.nodes)
+  semantic(context?:any):T  {
+    return this.rule?.semantic(this.nodes, context)
   }
 
   inspect() {
@@ -133,8 +133,10 @@ class ParseRule<T> implements Parseable {
    */
   alternativesResolved?:[string, ParseRule<T> | Terminal][][]
   
-  constructor(readonly name:string, readonly alternatives:string[][], readonly semantic:(n:AstNode<T>[]) => T) {
-  }
+  constructor(readonly name:string,
+              readonly alternatives:string[][],
+              readonly semantic:(n:AstNode<T>[], ctx?:any) => T)
+  {}
 
   resolveAlternatives(grammar:Grammar) {
     this.alternativesResolved = this.alternatives.map(
@@ -251,7 +253,7 @@ class Grammar {
     return result
   }
 
-  parse(tokens, debug=false):[any,ParseState] {
+  parse<T>(tokens, context?:T, debug=false):[any,ParseState,T] {
     if (!this.rulesResolved) {
       const result = this.rules.flatMap(r => r.resolveAlternatives(this))
       if (result.length)
@@ -266,7 +268,7 @@ class Grammar {
     while (!state.done()) {
       const ast = start.parserMatch(state)
       if (ast) {
-        const semantic = ast.semantic()
+        const semantic = ast.semantic(context)
         if (semantic != null) {
           semantics.push(semantic)
         }
@@ -274,11 +276,11 @@ class Grammar {
         if (debug) { 
           start.parserMatch(state)
         }
-        return [null, state]
+        return [null, state, context]
       }
     }
 
-    return [semantics, state]
+    return [semantics, state, context]
   }
 }
 

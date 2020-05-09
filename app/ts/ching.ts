@@ -19,148 +19,75 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import * as messages from "./messages.js"
-import * as patterns from "./patterns.js"
-
-import { Sample } from "./instrument.js"
+import { BpmControl } from "./bpm.js"
 import { GlongSet, GlongSetSampled, GlongSetSynthesized } from "./glongset.js"
+import { Sample } from "./instrument.js"
+import { SegmentAction } from "./patterns.js"
 
 import { assert } from "./lib/assert.js"
 import { errorHandler } from "./lib/error_handler.js"
+
+import * as messages from "./messages.js"
+import * as patterns from "./patterns.js"
 
 var cordova:any = (window as any).cordova
 var device:any = (window as any).device
 
 const MSG = messages.makeMultilingual([new messages.MessagesThai(), new messages.MessagesEnglish()])
 
-const BEATS_PER_HONG = 2
-
 window.onerror = errorHandler
 
-function bpmRampSeconds(bpmStart:number, bpmEnd:number, durHong:number) {
-  // suvat...
-  const a = (bpmEnd**2 - bpmStart**2) / 2 / (durHong * BEATS_PER_HONG)
-  const durMins = (bpmEnd - bpmStart) / a
-  return durMins * 60
-}
-
 export class DrumPattern {
-  // Drum patterns are working as a state-machine -- one state for instantaneous actions like BPM changes and
-  // one state for iterating through drum patterns. This choice was made because I didn't want to create one
-  // object per note during the parsing phase, to save memory.
-  private pattern?:string
-  private patternIdx = 0
-  private actionIdx = -1
+  private segmentIdx = -1
   private lengthTicks:number
-  private _tick:number = -1
   
-  constructor(readonly actions:any[]) {
-    this.lengthTicks = this.actions.reduce((acc, a) => acc + (a.length ?? 0), 0)
+  constructor(private readonly segments:SegmentAction[]) {
+    this.lengthTicks = segments.reduce((acc, sa) => acc + (sa.span ? sa.span.length() : 0), 0)
   }
 
   seek(app:AppChing, tick:number) {
     tick = this.lengthTicks ? tick % this.lengthTicks : 0
-    this.actionIdx = 0
-    this.pattern = null
-    this._tick = 0
-    let actionTick = 0
-    // Move this logic to action classes...
-    while (true) {
-      const action = this.actions[this.actionIdx]
-      if (!action)
-        break
-      this.doAction(app, action)
-      if (action.length) {
-        if (tick >= this._tick && tick < this._tick + action.length) {
-          this.pattern = action.pattern
-          this.patternIdx = 0
-          while (this._tick != tick) {
-            if (this.pattern[this.patternIdx++] != '.')
-              ++this._tick
-          }
+    
+    for (this.segmentIdx = 0; this.segmentIdx < this.segments.length; ++this.segmentIdx) {
+      const segment = this.segments[this.segmentIdx]
+      
+      if (app.bpmControl.playing)
+        for (const i of segment.instants)
+          i.run(app.bpmControl, this.segmentIdx == 0)
+      
+      if (segment.span) {
+        if (tick < segment.span.length()) {
+          segment.span.seek(tick)
           break
         } else {
-          this._tick += action.length
+          tick = Math.max(0, tick - segment.span.length())
         }
       }
-      ++this.actionIdx
     }
   }
 
-  protected doAction(app:AppChing, action:any) {
-    switch (action.action) {
-      case "drumpattern":
-        this.pattern = action.pattern
-        this.patternIdx = 0
-        return false
-      case "bpm":
-        const bpmEnd = action.factor ? app.bpm * action.factor : action.bpm
-        app.bpmRamp(bpmEnd,
-                    (this._tick % this.lengthTicks) == 0 ? 0 : bpmRampSeconds(app.bpm, bpmEnd, action.time ?? 6))
-        return true
-      case "end":
-        if (!app.ending) {
-          app.ending = true
-          
-          const bpmEnd = Math.min(45, app.bpm/2)
-          
-          // 6 and a bit hong of slowing (end on chup)
-          app.bpmRamp(bpmEnd, bpmRampSeconds(app.bpm, bpmEnd, (action.time ?? 6) + 0.1), app.onStop.bind(app))
-          return true
-        }
-    }
-  }
-  
-  tick(app:AppChing, actionLast?:any) {
-    if (!this.actions.length)
+  tick(app:AppChing) {
+    if (this.lengthTicks == 0)
       return
-    
-    if (this.pattern) {
-      const drum = Number(this.pattern[this.patternIdx])
-      
-      const register =
-        this.pattern[this.patternIdx + 1] != 'x' && Number.isNaN(Number(this.pattern[this.patternIdx + 1]))
-        ? this.pattern[this.patternIdx + 1]
-        : undefined
-      
-      if (!Number.isNaN(drum)) {
-        app.glongSet.glong(0, register == '.' ? 0.1 : 1.0, drum)
-      }
 
-      this.patternIdx += register ? 2 : 1
-      ++this._tick
-      
-      if (this.patternIdx == this.pattern.length) {
-        this.pattern = undefined
-        this.actionIdx = (this.actionIdx + 1) % this.actions.length
-      }
-      this._tick %= this.lengthTicks
-    } else {
-      const action = this.actions[this.actionIdx]
-      if (action != actionLast) {
-        if (this.doAction(app, action)) {
-          this.actionIdx = (this.actionIdx + 1) % this.actions.length
-        }
-        this.tick(app, action)
-      }
+    const segment = this.segments[this.segmentIdx]
+    assert(segment)
+    
+    if (!segment.span || segment.span.tick(app.glongSet)) {
+      this.segmentIdx = (this.segmentIdx + 1) % this.segments.length
+      this.segments[this.segmentIdx].span?.seek(0)
+      this.segments[this.segmentIdx].span?.tick(app.glongSet)
+      for (const i of this.segments[this.segmentIdx].instants)
+        i.run(app.bpmControl, (app.bpmControl.tick() % this.lengthTicks) == 0)
     }
   }
 }
 
 class AppChing {
   analyserActive = false
-  tick = 0
-  tickStart = null
-  tickTimeLast = null
-  bpm = null
-  tickPeriod = null
-  currentTimeout?:number
-  timeoutBpmRamp?:number
-  playing = false
-  ending = false
-  timings = undefined
   drumPattern?:DrumPattern
   drumPatternNext?:DrumPattern
+  readonly bpmControl:BpmControl
 
   private glongSetDetune:number
   glongSet?:GlongSet
@@ -171,6 +98,8 @@ class AppChing {
   private gainGlong?:GainNode
   private gainMaster?:GainNode
   private quietNoise?:AudioBufferSourceNode
+
+  private chupChupTimeout?:number
   
   constructor(
     private readonly eBpm:HTMLInputElement,
@@ -183,19 +112,9 @@ class AppChing {
     private readonly eChingVises:HTMLElement[]
   ) {
     this.eStop.setAttribute('disabled',undefined)
+    this.bpmControl = new BpmControl(eBpmJing, this.onTick.bind(this))
   }
 
-  timeouts():Array<number|undefined> {
-    return [this.currentTimeout, this.timeoutBpmRamp]
-  }
-  
-  debugTimings() {
-    if (this.timings == undefined)
-      this.timings = []
-    else
-      this.timings = undefined
-  }
-  
   async setup(
     eAnalyser:HTMLCanvasElement,
     eAnalyserOn:HTMLButtonElement,
@@ -260,7 +179,7 @@ class AppChing {
     this.quietNoise.loopEnd = 0.25
     this.quietNoise.start()
 
-    this.bpm = Number(this.eBpm.value) || 70
+    this.bpmControl.change(Number(this.eBpm.value) || 70)
     
     this.ePlay.addEventListener("click", this.onPlay.bind(this))
     this.ePlayDelay.addEventListener("click", this.onPlayDelay.bind(this))
@@ -268,7 +187,7 @@ class AppChing {
     this.eStop.addEventListener("click", this.onStop.bind(this))
 
     this.eBpm.addEventListener("change", e => {
-      this.onBpmChange(this.getBpm(this.eBpm.value))
+      this.bpmControl.change(this.getBpm(this.eBpm.value))
     })
 
     eAnalyserOn.addEventListener("click", e => {
@@ -333,15 +252,15 @@ class AppChing {
     const chup0 = () => {
       this.glongSet.kill()
       this.glongSet.chup(0, 1)
-      this.currentTimeout = window.setTimeout(chup1, 200)
+      this.chupChupTimeout = window.setTimeout(chup1, 200)
     }
     const chup1 = () => {
       this.glongSet.chup(0, 1)
-      this.currentTimeout = window.setTimeout(chup2, this.tickPeriod * 8)
+      this.chupChupTimeout = window.setTimeout(chup2, this.bpmControl.msTickPeriod() * 8)
     }
     const chup2 = () => {
       this.glongSet.ching(0,1)
-      this.currentTimeout = window.setTimeout(() => this.onPlay(), this.tickPeriod * 4)
+      this.chupChupTimeout = window.setTimeout(() => this.onPlay(), this.bpmControl.msTickPeriod() * 4)
     }
     chup0()
   }
@@ -349,7 +268,7 @@ class AppChing {
   doPattern() {
     if (this.drumPatternNext != null) {
       this.drumPattern = appChing.drumPatternNext
-      this.drumPattern.seek(this, this.tick)
+      this.drumPattern.seek(this, Math.max(0, this.bpmControl.tick()-1))
       this.drumPatternNext = null
     }
     this.drumPattern?.tick(this)
@@ -358,12 +277,11 @@ class AppChing {
   onPlay() {
     this.glongSet.kill()
 
-    this.onBpmChange(this.getBpm(this.eBpm.value))
+    this.bpmControl.stop()
+    this.bpmControl.change(this.getBpm(this.eBpm.value))
 
-    this.tick = 0
     this.drumPattern?.seek(this, 0)
-    this.playing = true
-    this.tickStart = window.performance.now()
+    this.bpmControl.play()
     this.eStop.removeAttribute('disabled')
     this.ePlay.setAttribute('disabled',undefined)
 
@@ -372,16 +290,13 @@ class AppChing {
     if (this.analyserActive) {
       this.gainMaster.connect(this.analyser)
     }
-
-    this.onTick()
   }
 
   onStop() {
-    this.ending = false
-    this.playing = false
-    for (const t of this.timeouts()) {
-      window.clearTimeout(t)
-    }
+    window.clearTimeout(this.chupChupTimeout)
+    this.chupChupTimeout = null
+    
+    this.bpmControl.stop()
     this.eStop.setAttribute('disabled',undefined)
     this.ePlay.removeAttribute('disabled')
     this.ePlayDelay.removeAttribute('disabled')
@@ -389,19 +304,14 @@ class AppChing {
   }
 
   onTick():boolean {
-    if (!this.playing) {
-      return false
-    }
-
-    this.tickTimeLast = window.performance.now()
+    let currentTick = this.bpmControl.tick() - 1
     
-    if (this.tick % 8 == 0) {
+    if (currentTick % 8 == 0) {
       this.glongSet.chup(0, 1)
-    } else if (this.tick % 8 == 4) {
+    } else if (currentTick % 8 == 4) {
       this.glongSet.ching(0,1)
     }
 
-    let currentTick = this.tick
     window.setTimeout(
       () => {
         this.eHong.value = (Math.floor(currentTick / 4) + 1).toString();
@@ -412,32 +322,6 @@ class AppChing {
 
     this.doPattern()
 
-    this.tick += 1
-
-    this.currentTimeout = window.setTimeout(
-      this.onTick.bind(this),
-      (this.tickStart + this.tickPeriod * this.tick) - this.tickTimeLast
-    );
-
-    if (this.timings != undefined && this.timings.push(this.tickTimeLast) == 80) {
-      const timings = this.timings
-      this.timings = undefined
-
-      const diffs = [];
-      for (let i = 1; i < timings.length; ++i) {
-        diffs.push(timings[i] - timings[i-1])
-      }
-
-      let report = "Tick #: " + this.tick + "\n"
-      report += "Ideal tick period: " + this.tickPeriod + "\n"
-      report += "Mean tick period: " + diffs.reduce((acc, v) => acc + v, 0) / diffs.length + "\n"
-
-      diffs.sort()
-      report += "Median tick period: " + diffs[Math.floor(diffs.length/2)]
-
-      alert(report)
-    }
-    
     return true
   }
   
@@ -507,100 +391,42 @@ class AppChing {
     this.glongSet = glongSet
   }
   
-  onBpmChange(bpm) {
-    assert(!Number.isNaN(Number(bpm)))
-
-    this.bpm = bpm
-    const oldPeriod = this.tickPeriod
-    this.tickPeriod = bpmToTickPeriodMs(bpm)
-    if (this.timings != undefined)
-      this.timings = []
-
-    // Tick times are calculated relative to a start time as this improves precision due to the lack of
-    // accumlating error from repeated additions to the base time.
-    if (this.playing && this.tick != 0) {
-      const thisTickTime = this.tickStart + oldPeriod * (this.tick-1)
-      const newTickTime = thisTickTime + this.tickPeriod
-      this.tickStart = newTickTime - this.tickPeriod * this.tick
-
-      // re-calculate next tick time
-      // Only re-trigger the tick if there's a sufficiently large delta, otherwise the asynchronous event may
-      // be triggered even before the timeout is cleared, resulting in a double-trigger. For small deltas, the
-      // difference isn't noticable anyway, and may even be wrong due to browser time precision fuzzing.
-      const newNextTick = Math.max(0, newTickTime - window.performance.now())
-      if (this.currentTimeout && newNextTick > 100) {
-        window.clearTimeout(this.currentTimeout)
-        this.currentTimeout = window.setTimeout(
-          this.onTick.bind(this),
-          newNextTick
-        );
-      }
-    }
-    
-    this.eBpmJing.value = this.bpm
-  }
-  
-  bpmRamp(endBpm, time, onStop=null) {
-    window.clearTimeout(this.timeoutBpmRamp)
-    
-    const startBpm = this.bpm
-    const updatesPerSec = 10
-    const updates = Math.max(Math.floor(time * updatesPerSec), 1)
-
-    const loop = i => {
-      if (i == updates) {
-        this.onBpmChange(endBpm)
-        if (onStop) {
-          onStop()
-        }
-      } else {
-        this.onBpmChange(startBpm + (i/updates) * (endBpm - startBpm))
-        this.timeoutBpmRamp = window.setTimeout(() => loop(i+1), 1000/updatesPerSec)
-      }
-    }
-
-    loop(1)
-  }
-  
   getBpm(anyVal:number|string) {
-    const numBpm = Number(anyVal);
+    const numBpm = Number(anyVal)
     if (numBpm != NaN) {
-      return numBpm;
+      return numBpm
     } else {
-      return appChing.bpm;
+      return this.bpmControl.bpm()
     }
   }
 
   private onBpmMod(evt) {
     const e = evt.target
+    let bpm:number
     if (e.dataset.set) {
-      this.bpm = Number(e.dataset.set);
+      bpm = Number(e.dataset.set)
     } else if (e.dataset.scale) {
-      this.bpm *= Number(e.dataset.scale);
+      bpm = this.bpmControl.bpm() * Number(e.dataset.scale)
     } else {
-      this.bpm += Number(e.dataset.increment);
+      bpm = this.bpmControl.bpm() + Number(e.dataset.increment)
     }
-    this.eBpm.value = this.bpm
-    this.onBpmChange(this.bpm)
+    this.eBpm.value = bpm.toString()
+    this.bpmControl.change(bpm)
   }
   
   onDrumPatternChange(value) {
     const tokens = patterns.grammar.tokenize(value)
-    const [semantics, state] = patterns.grammar.parse(tokens)
+    const [_, state, context] = patterns.grammar.parse(tokens, [new SegmentAction()])
     if (state.error) {
 	    throw new Error(state.error + "\n" + state.context())
     }
     
-    appChing.drumPatternNext = new DrumPattern(semantics)
+    appChing.drumPatternNext = new DrumPattern(context)
   }
 }
 
 // Export just for debugging convenience
 export let appChing:AppChing
-
-function bpmToTickPeriodMs(bpm) {
-  return 60000.0 / bpm / 2
-}
 
 function analyserDraw(time, analyser, canvasCtx) {
   const updateFreq = (1/65) * 1000
