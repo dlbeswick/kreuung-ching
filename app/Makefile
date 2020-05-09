@@ -2,8 +2,6 @@ CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
 SASS = sass
 
-SRC = ts/ching.ts ts/messages.ts ts/instrument.ts ts/glongset.ts ts/shaper.ts ts/patterns.ts ts/lib/parser.ts ts/lib/rand.ts ts/parser_test.ts
-
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
 build: www/css/app.css www/js/ching.js www/js www/css data
