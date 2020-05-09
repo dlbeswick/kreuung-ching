@@ -129,8 +129,10 @@ export const pleyngKhmenOmDteuk="# เขมรอมตึ๊ก ท่อน �
   "\n";
 
 // Drum patterns are working as a state-machine -- one state for instantaneous actions like BPM changes and
-// one state for iterating through drum patterns. This choice was made because I didn't want to create one
-// object per note during the parsing phase, to save memory.
+// one state for iterating through drum patterns, wait states, etc. This choice was made because I didn't want
+// to create one object per note during the parsing phase, to save memory.
+//
+// Instantaneous actions are processed before timespan actions.
 export class SegmentAction {
   instants:ActionInstant[] = []
   span?:ActionTimespan
@@ -145,7 +147,7 @@ export interface ActionInstant {
 }
 
 export interface ActionTimespan {
-  tick(glongSet:GlongSet):boolean
+  tick(glongSet:GlongSet, bpm:BpmControl):boolean
   seek(tickRelative:number):void
   length():number
 }
@@ -155,14 +157,14 @@ class ActionWait implements ActionTimespan {
   constructor(private readonly _length:number) {}
 
   seek(tickRelative:number):void {
-    assert(this._tick < this.length())
+    assert(tickRelative < this.length())
     this._tick = tickRelative
   }
 
   length() { return this._length }
   
-  tick():boolean {
-    return this._tick++ < this.length()
+  tick(glongSet:GlongSet, bpm:BpmControl):boolean {
+    return this._tick++ == bpm.ticksPerHong() * this.length()
   }
 }
 

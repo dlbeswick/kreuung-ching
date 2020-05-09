@@ -73,10 +73,10 @@ export class DrumPattern {
     const segment = this.segments[this.segmentIdx]
     assert(segment)
     
-    if (!segment.span || segment.span.tick(app.glongSet)) {
+    if (!segment.span || segment.span.tick(app.glongSet, app.bpmControl)) {
       this.segmentIdx = (this.segmentIdx + 1) % this.segments.length
       this.segments[this.segmentIdx].span?.seek(0)
-      this.segments[this.segmentIdx].span?.tick(app.glongSet)
+      this.segments[this.segmentIdx].span?.tick(app.glongSet, app.bpmControl)
       for (const i of this.segments[this.segmentIdx].instants)
         i.run(app.bpmControl, (app.bpmControl.tick() % this.lengthTicks) == 0)
     }
