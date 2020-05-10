@@ -40,8 +40,6 @@ export class BpmControl {
     if (this.timings != undefined)
       this.timings = []
 
-    // Tick times are calculated relative to a start time as this improves precision due to the lack of
-    // accumlating error from repeated additions to the base time.
     if (this._playing && this._tick != 0) {
       const thisTickTime = this.tickStart + oldPeriod * (this._tick-1)
       const newNextTickTime = thisTickTime + this._msTickPeriod
@@ -115,6 +113,8 @@ export class BpmControl {
       alert(report)
     }
 
+    // Tick times are calculated relative to a start time. This improves precision as it avoids
+    // accumlating floating-point error from repeated additions to the base time.
     this.timeoutTick = window.setTimeout(
       this.onTick.bind(this),
       (this.tickStart + this._msTickPeriod * this._tick) - this.tickTimeLast

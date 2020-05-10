@@ -335,6 +335,9 @@ export const grammar = new Grammar(
         ['BPM', 'number'],
       ],
 	  (nodes, ctx) => {
+        if (ctx[ctx.length-1].span)
+          ctx.push(new SegmentAction())
+        
         const value = nodes[1].semantic()
         const time = nodes[nodes.length-1]?.semantic()
         if (nodes.length == 2 || nodes.length == 4)
@@ -347,7 +350,11 @@ export const grammar = new Grammar(
 	  'end',
 	  [['END', 'SLASH', 'number'],
        ['END']],
-	  (nodes, ctx:SegmentAction[]) => ctx[ctx.length-1].instants.push(new ActionEnd(nodes[2]?.semantic()))
+	  (nodes, ctx:SegmentAction[]) => {
+        if (ctx[ctx.length-1].span)
+          ctx.push(new SegmentAction())
+        ctx[ctx.length-1].instants.push(new ActionEnd(nodes[2]?.semantic()))
+      }
 	),
 	new ParseRule(
 	  'wait',
