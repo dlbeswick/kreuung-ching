@@ -21,107 +21,124 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!DOCTYPE html>
 <html lang="th">
   <head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>เครื่องฉิ่ง</title>
-		<link rel="stylesheet" href="css/app.css">
-		<script src="cordova.js"></script>
-		<script type="module" src="js/ching.js"></script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>เครื่องฉิ่ง</title>
+	<link rel="stylesheet" href="css/app.css">
+	<script src="cordova.js"></script>
+	<script type="module" src="js/ching.js"></script>
   </head>
-	
+  
   <body>
-		<div class="wrapper">
-			<div id="error" class="error"></div>
+	<div class="wrapper">
+	  <div id="error" class="error"></div>
 
-			<form id="ching">
-				<fieldset>
-					<legend>การควบคุมเล่น / Play Controls</legend>
-					<div class="controlstrip buttonstrip-lrg buttonstrip-stretch">
-						<button id="play" title="Play" type="button">เล่น</button>
-						<button id="play-delay" title="Play delayed" type="button">ฉับๆ</button>
-						<button id="stop" title="Stop" type="button" disabled>หยุด</button>
-					</div>
-					<div>
-						<label>ระดับเสียงฉิ่ง<input id="vol-ching" type="range" min="0" max="100" value="50"></label>
-					</div>
-					<div class="controlstrip">
-						<label>BPM
-							<input type="number" id="bpm" placeholder="70.00" step="any" min="1.00" value="70.00" />
-						</label>
-						<label>จริง<input type="text" id="bpm-jing" disabled /></label>
-						<label>ห้อง<input type="text" id="hong" value="1" disabled /></label>
-					</div>
-					<div id="ching-visualize">
-						<div id="ching-visualize-0" class="ching-visualize-block" data-active-col="green"></div>
-						<div id="ching-visualize-1" class="ching-visualize-block" data-active-col="lightgrey"></div>
-						<div id="ching-visualize-2" class="ching-visualize-block" data-active-col="magenta"></div>
-						<div id="ching-visualize-3" class="ching-visualize-block" data-active-col="lightgrey"></div>
-					</div>
-					<div id="bpm-mods" class="controlstrip buttonstrip-lrg">
-						<div>
-							<button class="bpm-mod" data-scale="0.98" type="button">-2%</button>
-							<button class="bpm-mod" data-scale="1.02" type="button">+2%</button>
-						</div>
-						<div>
-							<button class="bpm-mod" data-scale="0.95" type="button">-5%</button>
-							<button class="bpm-mod" data-scale="1.05" type="button">+5%</button>
-						</div>
-						<div>
-							<button class="bpm-mod" data-scale="0.5" type="button">/2</button>
-							<button class="bpm-mod" data-scale="2" type="button">x2</button>
-						</div>
-					</div>
-				</fieldset>
-				<fieldset id="glong">
-				  <legend>กลอง</legend>
-				  <div>
-					<label>ชุดกลอง
-					  <select id="glongset">
-						<option value="sampled">ตัวอย่างเสียง</option>
-						<option value="synthesized">สังเคราะห์</option>
-					  </select>
-					</label>
-				  </div>
-					<div class="flexbox-wrap">
-					  <div>
-						<p>แบบเสียง</p>
-						<textarea id="pattern-drum" cols="25" rows="10"></textarea>
-					  </div>
-					  <div>
-						<div>
-						  <label>ระดับเสียง<input id="vol-glong" type="range" min="0" max="100" value="50"></label>
-						</div>
-						<div>
-						  <label>การปรับเสียง<input id="tune-glong" type="range" min="0" max="100" value="50"></label>
-						</div>
-					  </div>
-					  <div id="pattern-select">
-						<button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
-						<button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
-						<button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
-						<button id="pattern-noyjaiyah" type="button">ตามนัอยใจยา</button>
-						<button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
-						<button id="pattern-gabber" type="button">แกบเบอร์</button>
-					  </div>
-					</div>
-				</fieldset>
-				<fieldset>
-					<legend>ตัววิเคระห์สเปกตรัม (ตัววิเคระห์แถบเสียงแยกส่วน) / Spectrum Analyzer</legend>
-					<div class="buttonstrip-sml">
-						<button id="analyser-on" title="On" type="button">เปิด</button>
-						<button id="analyser-off" title="Off" type="button" disabled>ปิด</button>
-					</div>
-					<canvas id="analyser"></canvas>
-					<div id="instruments" class="buttonstrip-sml">
-						<button id="play-ching-closed" type="button">ฉิ่ง 0</button>
-						<button id="play-ching-open" type="button">ฉิ่ง 1</button>
-						<button class="play-drum" type="button">กลอง ทั่ม</button>
-						<button class="play-drum" type="button">กลอง ติง</button>
-						<button class="play-drum" type="button">กลอง โจ๊ะ</button>
-						<button class="play-drum" type="button">กลอง จ๋ง</button>
-					</div>
-				</fieldset>
-			</form>
+	  <form id="ching">
+		<fieldset>
+		  <legend>การควบคุมเล่น / Play Controls</legend>
+		  <div class="controlstrip buttonstrip-lrg buttonstrip-stretch">
+			<button id="play" title="Play" type="button">เล่น</button>
+			<button id="play-delay" title="Play delayed" type="button">ฉับๆ</button>
+			<button id="stop" title="Stop" type="button" disabled>หยุด</button>
+		  </div>
+		  <div>
+			<label>ระดับเสียงฉิ่ง<input id="vol-ching" type="range" min="0" max="100" value="50"></label>
+		  </div>
+		  <div class="controlstrip">
+			<label>BPM
+			  <input type="number" id="bpm" placeholder="70.00" step="any" min="1.00" value="70.00" />
+			</label>
+			<label>จริง<input type="text" id="bpm-jing" disabled /></label>
+			<label>ห้อง<input type="text" id="hong" value="1" disabled /></label>
+		  </div>
+		  <div id="ching-visualize">
+			<div id="ching-visualize-0" class="ching-visualize-block" data-active-col="green"></div>
+			<div id="ching-visualize-1" class="ching-visualize-block" data-active-col="lightgrey"></div>
+			<div id="ching-visualize-2" class="ching-visualize-block" data-active-col="magenta"></div>
+			<div id="ching-visualize-3" class="ching-visualize-block" data-active-col="lightgrey"></div>
+		  </div>
+		  <div id="bpm-mods" class="controlstrip buttonstrip-lrg">
+			<div>
+			  <button class="bpm-mod" data-scale="0.98" type="button">-2%</button>
+			  <button class="bpm-mod" data-scale="1.02" type="button">+2%</button>
+			</div>
+			<div>
+			  <button class="bpm-mod" data-scale="0.95" type="button">-5%</button>
+			  <button class="bpm-mod" data-scale="1.05" type="button">+5%</button>
+			</div>
+			<div>
+			  <button class="bpm-mod" data-scale="0.5" type="button">/2</button>
+			  <button class="bpm-mod" data-scale="2" type="button">x2</button>
+			</div>
+		  </div>
+		</fieldset>
+		<fieldset id="glong">
+		  <legend>กลอง</legend>
+		  <div>
+			<label>ชุดกลอง
+			  <select id="glongset">
+				<option value="sampled">ตัวอย่างเสียง</option>
+				<option value="synthesized">สังเคราะห์</option>
+			  </select>
+			</label>
+		  </div>
+		  <div class="flexbox-wrap">
+			<div>
+			  <p>แบบเสียง</p>
+			  <textarea id="pattern-drum" cols="25" rows="10"></textarea>
+			  <div>
+				<button id="pattern-save" title="Save" type="button">บันทึก</button>
+				<button id="pattern-del" title="Delete" type="button" disabled="true">ลบ</button>
+			  </div>
+			</div>
+			<div>
+			  <div>
+				<label>ระดับเสียง<input id="vol-glong" type="range" min="0" max="100" value="50"></label>
+			  </div>
+			  <div>
+				<label>การปรับเสียง<input id="tune-glong" type="range" min="0" max="100" value="50"></label>
+			  </div>
+			</div>
+			<div id="pattern-select">
+			  <button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
+			  <label>ผู้ใช้งาน<select id="patterns-user"><option value=''>ไม่มี</option></select></label>
+			  <button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
+			  <button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
+			  <button id="pattern-noyjaiyah" type="button">ตามนัอยใจยา</button>
+			  <button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
+			  <button id="pattern-gabber" type="button">แกบเบอร์</button>
+			</div>
+		  </div>
+		</fieldset>
+		<fieldset>
+		  <legend>ตัววิเคระห์สเปกตรัม (ตัววิเคระห์แถบเสียงแยกส่วน) / Spectrum Analyzer</legend>
+		  <div class="buttonstrip-sml">
+			<button id="analyser-on" title="On" type="button">เปิด</button>
+			<button id="analyser-off" title="Off" type="button" disabled>ปิด</button>
+		  </div>
+		  <canvas id="analyser"></canvas>
+		  <div id="instruments" class="buttonstrip-sml">
+			<button id="play-ching-closed" type="button">ฉิ่ง 0</button>
+			<button id="play-ching-open" type="button">ฉิ่ง 1</button>
+			<button class="play-drum" type="button">กลอง ทั่ม</button>
+			<button class="play-drum" type="button">กลอง ติง</button>
+			<button class="play-drum" type="button">กลอง โจ๊ะ</button>
+			<button class="play-drum" type="button">กลอง จ๋ง</button>
+		  </div>
+		</fieldset>
+	  </form>
+	</div>
+	
+	<div id="dialog-save" class="modal" style="display: none">
+	  <div class="modal-content">
+		<div>
+		  <label>ชื่อ<input></input></label>
 		</div>
+		<div>
+		  <button class="cancel">ยกเลิก</button>
+		  <button class="save">บันทึก</button>
+		</div>
+	  </div>
+	</div>
   </body>
 </html>

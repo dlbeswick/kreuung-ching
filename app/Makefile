@@ -1,6 +1,6 @@
 CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
-SASS = sass
+SASSC = sassc
 
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
@@ -30,7 +30,7 @@ www/js/ching.js: ts/*.ts ts/lib/*.ts
 	"$(TYPESCRIPT)" --noEmitOnError --target es2019 --module es2015 --outDir www/js ts/ching.ts ts/parser_test.ts
 
 www/css/app.css : sass/app.scss
-	"$(SASS)" $<:$@
+	"$(SASSC)" $< $@
 
 run: build cordova-prepare
 	"$(CORDOVA)" run android --device
