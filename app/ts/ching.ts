@@ -153,16 +153,17 @@ class AppChing {
     input.addEventListener("input", onChange)
 
     demandById("pattern-save").addEventListener("click", () => {
-      dlg.style.removeProperty('display')
+      dlg.classList.add("modal-show")
       input.value = select.value ? select.selectedOptions[0].innerText : ''
       onChange()
     })
 
-    dlg.getElementsByClassName("cancel")[0].addEventListener("click", () => dlg.style.display = 'none')
+    dlg.getElementsByClassName("cancel")[0].addEventListener("click", () => dlg.classList.remove("modal-show"))
 
     save.addEventListener("click", () => {
-      dlg.style.display = 'none'
-      this.onSavePattern(dlg.getElementsByTagName("input")[0].value, patternDrum.value)
+      dlg.classList.remove("modal-show")
+      this.onSavePattern(input.value, patternDrum.value)
+      select.value = "pleyng-" + input.value
     })
 
     select.addEventListener(

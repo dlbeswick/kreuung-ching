@@ -82,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 			  </select>
 			</label>
 		  </div>
-		  <div class="flexbox-wrap">
+		  <div id="glong-patternctl">
 			<div>
 			  <p>แบบเสียง</p>
 			  <textarea id="pattern-drum" cols="25" rows="10"></textarea>
@@ -100,8 +100,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 			  </div>
 			</div>
 			<div id="pattern-select">
+			  <label>แบบผู้ใช้งาน<select id="patterns-user"><option value=''>ไม่มี</option></select></label>
 			  <button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
-			  <label>ผู้ใช้งาน<select id="patterns-user"><option value=''>ไม่มี</option></select></label>
 			  <button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
 			  <button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
 			  <button id="pattern-noyjaiyah" type="button">ตามนัอยใจยา</button>
@@ -129,7 +129,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 	  </form>
 	</div>
 	
-	<div id="dialog-save" class="modal" style="display: none">
+	<div id="dialog-save" class="modal">
 	  <div class="modal-content">
 		<div>
 		  <label>ชื่อ<input></input></label>
