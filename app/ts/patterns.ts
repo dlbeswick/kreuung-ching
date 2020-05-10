@@ -236,7 +236,7 @@ class ActionDrumPattern implements ActionTimespan {
         ++this.idx
       } else {
         const register = ActionDrumPattern.registers.exec(this.pattern[this.idx + 1] ?? '')
-        glongSet.glong(0, register && register[0] == '.' ? 0.1 : 1.0, Number(action))
+        glongSet.glong(0, register && register[0] == '.' ? 0.1 + Math.random()*0.1 : 1.0, Number(action))
         this.idx += register ? 2 : 1
       }
       return false
