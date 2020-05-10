@@ -204,6 +204,14 @@ class ActionEnd implements ActionInstant {
   }
 }
 
+class ActionChun implements ActionInstant {
+  constructor(private readonly chun:number) {}
+
+  run(bpm:BpmControl, isFirstTick:boolean) {
+    bpm.chunSet(this.chun)
+  }
+}
+
 class ActionDrumPattern implements ActionTimespan {
   private readonly _length:number
   private idx:number = 0
@@ -255,6 +263,7 @@ export const grammar = new Grammar(
 	new TerminalRegex("BPM", /^BPM/i),
 	new TerminalRegex("END", /^END/i),
 	new TerminalRegex("WAIT", /^WAIT/i),
+	new TerminalRegex("CHUN", /^CHUN/i),
 	new TerminalRegex("COMMENT", /^#.*/),
   ],
   [
@@ -266,6 +275,7 @@ export const grammar = new Grammar(
 		['drumpattern'],
 		['bpm'],
 		['end'],
+		['chun'],
 		['wait'],
 	  ],
 	  (nodes, ctx) => nodes[0].semantic(ctx)
@@ -354,6 +364,15 @@ export const grammar = new Grammar(
         if (ctx[ctx.length-1].span)
           ctx.push(new SegmentAction())
         ctx[ctx.length-1].instants.push(new ActionEnd(nodes[2]?.semantic()))
+      }
+	),
+	new ParseRule(
+	  'chun',
+	  [['CHUN', 'number']],
+	  (nodes, ctx:SegmentAction[]) => {
+        if (ctx[ctx.length-1].span)
+          ctx.push(new SegmentAction())
+        ctx[ctx.length-1].instants.push(new ActionChun(nodes[1]?.semantic()))
       }
 	),
 	new ParseRule(

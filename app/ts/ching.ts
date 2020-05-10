@@ -121,6 +121,8 @@ class AppChing {
   constructor(
     private readonly eBpm:HTMLInputElement,
     private readonly eBpmJing:HTMLInputElement,
+    private readonly eChun:HTMLInputElement,
+    private readonly eChunJing:HTMLInputElement,
     private readonly tuneGlong:HTMLInputElement,
     private readonly eHong:HTMLInputElement,
     private readonly ePlay:HTMLButtonElement,
@@ -129,7 +131,7 @@ class AppChing {
     private readonly eChingVises:HTMLElement[]
   ) {
     this.eStop.setAttribute('disabled',undefined)
-    this.bpmControl = new BpmControl(eBpmJing, this.onTick.bind(this))
+    this.bpmControl = new BpmControl(eBpmJing, eChunJing, this.onTick.bind(this), this.onStop.bind(this))
   }
 
   setupPreUserInteraction(
@@ -262,8 +264,12 @@ class AppChing {
     this.ePlay.addEventListener("click", this.onPlay.bind(this))
     this.ePlayDelay.addEventListener("click", this.onPlayDelay.bind(this))
 
-    this.eStop.addEventListener("click", this.onStop.bind(this))
+    this.eStop.addEventListener("click", this.bpmControl.stop.bind(this.bpmControl))
 
+    this.eChun.addEventListener("change", e => {
+      this.bpmControl.chunSet(Number(this.eChun.value))
+    })
+    
     this.eBpm.addEventListener("change", e => {
       this.bpmControl.change(this.getBpm(this.eBpm.value))
     })
@@ -341,7 +347,7 @@ class AppChing {
   }
     
   onPlayDelay() {
-    this.onStop()
+    this.bpmControl.stop()
     this.bpmControl.change(this.getBpm(this.eBpm.value))
     this.drumPattern?.seek(this, 0)
     this.ePlay.setAttribute('disabled',undefined)
@@ -376,6 +382,7 @@ class AppChing {
 
     this.bpmControl.stop()
     this.bpmControl.change(this.getBpm(this.eBpm.value))
+    this.bpmControl.chunSet(Number(this.eChun.value))
 
     this.drumPattern?.seek(this, 0)
     this.bpmControl.play()
@@ -392,20 +399,19 @@ class AppChing {
   onStop() {
     window.clearTimeout(this.chupChupTimeout)
     this.chupChupTimeout = null
-    
-    this.bpmControl.stop()
-    this.eStop.setAttribute('disabled',undefined)
-    this.ePlay.removeAttribute('disabled')
-    this.ePlayDelay.removeAttribute('disabled')
+    this.eStop.disabled = true
+    this.ePlay.disabled = false
+    this.ePlayDelay.disabled = false
     this.quietNoise.disconnect()
   }
 
   onTick():boolean {
-    let currentTick = this.bpmControl.tick() - 1
+    const currentTick = this.bpmControl.tick() - 1
+    const divisorChun = 2**(this.bpmControl.chun() + 1)
     
-    if (currentTick % 8 == 0) {
+    if (currentTick % divisorChun == 0) {
       this.glongSet.chup(0, 1)
-    } else if (currentTick % 8 == 4) {
+    } else if (currentTick % divisorChun == divisorChun/2) {
       this.glongSet.ching(0,1)
     }
 
@@ -678,6 +684,8 @@ document.addEventListener("deviceready", () => {
   appChing = new AppChing(
     document.getElementById("bpm") as HTMLInputElement,
     document.getElementById("bpm-jing") as HTMLInputElement,
+    document.getElementById("chun") as HTMLInputElement,
+    document.getElementById("chun-jing") as HTMLInputElement,
     document.getElementById('tune-glong') as HTMLInputElement,
     document.getElementById("hong") as HTMLInputElement,
     document.getElementById("play") as HTMLButtonElement,
@@ -698,8 +706,7 @@ document.addEventListener("deviceready", () => {
       [document.getElementById("pattern-lao"), patterns.pleyngDahmLao],
       [document.getElementById("pattern-khmen"), patterns.pleyngDahmKhmen],
       [document.getElementById("pattern-noyjaiyah"), patterns.dahmNoyJaiYah],
-      [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk],
-      [document.getElementById("pattern-gabber"), patterns.patternGabber]
+      [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
     ]
   )
   

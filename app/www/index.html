@@ -51,6 +51,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 			<label>จริง<input type="text" id="bpm-jing" disabled /></label>
 			<label>ห้อง<input type="text" id="hong" value="1" disabled /></label>
 		  </div>
+		  <div class="controlstrip">
+			<label>ชั้น
+			  <input type="number" id="chun" placeholder="2" step="1" value="2" min="0" max="10" />
+			</label>
+			<label>จริง<input type="text" id="chun-jing" disabled /></label>
+		  </div>
 		  <div id="ching-visualize">
 			<div id="ching-visualize-0" class="ching-visualize-block" data-active-col="green"></div>
 			<div id="ching-visualize-1" class="ching-visualize-block" data-active-col="lightgrey"></div>
@@ -106,7 +112,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 			  <button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
 			  <button id="pattern-noyjaiyah" type="button">ตามนัอยใจยา</button>
 			  <button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
-			  <button id="pattern-gabber" type="button">แกบเบอร์</button>
 			</div>
 		  </div>
 		</fieldset>
