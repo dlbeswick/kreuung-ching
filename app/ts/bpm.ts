@@ -166,7 +166,7 @@ export class BpmControl {
   bpmRampHongs(bpmEnd:number, hongs:number, onStop=null) {
     this.bpmRamp(
       bpmEnd,
-      bpmRampSeconds(this._bpm, bpmEnd, hongs),
+      hongs == 0 ? 0 : bpmRampSeconds(this._bpm, bpmEnd, hongs),
       onStop
     )
   }
