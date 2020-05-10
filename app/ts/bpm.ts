@@ -44,15 +44,15 @@ export class BpmControl {
     // accumlating error from repeated additions to the base time.
     if (this._playing && this._tick != 0) {
       const thisTickTime = this.tickStart + oldPeriod * (this._tick-1)
-      const newTickTime = thisTickTime + this._msTickPeriod
-      this.tickStart = newTickTime - this._msTickPeriod * this._tick
+      const newNextTickTime = thisTickTime + this._msTickPeriod
+      this.tickStart = newNextTickTime - this._msTickPeriod * this._tick
 
       // re-calculate next tick time
-      // Only re-trigger the tick if there's a sufficiently large delta, otherwise the asynchronous event may
-      // be triggered even before the timeout is cleared, resulting in a double-trigger. For small deltas, the
-      // difference isn't noticable anyway, and may even be wrong due to browser time precision fuzzing.
-      const newNextTick = Math.max(0, newTickTime - window.performance.now())
-      if (this.timeoutTick && newNextTick > 100) {
+      // Only re-trigger the tick if it happens in the future and there's a sufficiently large delta.
+      // It can be jarring to re-calculate the tick time between close-together drum hits, but it's also not
+      // desirable to wait a long time for large increases in BPM value to take effect on the next tick.
+      const newNextTick = newNextTickTime - window.performance.now()
+      if (newNextTick > 500) {
         window.clearTimeout(this.timeoutTick)
         this.timeoutTick = window.setTimeout(
           this.onTick.bind(this),
@@ -87,6 +87,9 @@ export class BpmControl {
   }
   
   private onTick() {
+    if (!this._playing)
+      return
+    
     ++this._tick
     
     this.funcTick()
@@ -111,7 +114,7 @@ export class BpmControl {
 
       alert(report)
     }
-    
+
     this.timeoutTick = window.setTimeout(
       this.onTick.bind(this),
       (this.tickStart + this._msTickPeriod * this._tick) - this.tickTimeLast
