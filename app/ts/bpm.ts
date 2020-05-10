@@ -24,9 +24,12 @@ export class BpmControl {
   private ending = false
   private _tick = 0
   private tickStart = 0
+  private _chun = 2
 
   constructor(private readonly eBpmJing:HTMLInputElement,
-              private readonly funcTick:() => void) {
+              private readonly eChunJing:HTMLInputElement,
+              private readonly funcTick:() => void,
+              private readonly funcStop:() => void) {
   }
   
   change(bpm:number) {
@@ -68,6 +71,15 @@ export class BpmControl {
   tick() { return this._tick }
   playing() { return this._playing }
   msTickPeriod() { return this._msTickPeriod }
+
+  chun() {
+    return this._chun
+  }
+
+  chunSet(chun:number) {
+    this._chun = chun
+    this.eChunJing.value = chun.toString()
+  }
   
   play() {
     this._tick = 0
@@ -82,6 +94,7 @@ export class BpmControl {
     for (const t of [this.timeoutTick, this.timeoutBpmRamp]) {
       window.clearTimeout(t)
     }
+    this.funcStop()
   }
   
   private onTick() {
