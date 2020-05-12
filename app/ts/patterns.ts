@@ -28,15 +28,15 @@ import { assert } from "./lib/assert.js"
 export const patternGabber="023231010xx1515234x26231";
 
 export const dahmNoyJaiYah=
-  "1xxxx01xxxx01xx0 \n" +
-  "1xxxx01xxxx01xx0 \n" +
-  "1xxxx01xxxx01xx0 \n" +
-  "1xxxx01xxxx01xx0 \n" +
-  "\n"                  +
-  "1xxxx01xxxx01xx0 \n" +
-  "1xxxxx1xxxx01xx0 \n" +
-  "1xxxx0101xx01xx0 \n" +
-  "1xxxx01xxxx01xx0 \n" ;
+"x01xxxx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"+
+"x0101xx0 1xx01xxx\n"+
+"x01xxxx0 1xx01xxx\n"
+
 
 export const pleyngDahmLao=
   "0x1x3x1x1xxx0x1x \n" +
@@ -216,10 +216,10 @@ class ActionDrumPattern implements ActionTimespan {
   private readonly _length:number
   private idx:number = 0
 
-  private static readonly registers = /[^0-9x]/g
+  private static readonly registers = /[^0-9x]/
   
   constructor(private readonly pattern:string) {
-    this._length = pattern.replace(ActionDrumPattern.registers,'').length    
+    this._length = pattern.replace(new RegExp(ActionDrumPattern.registers, 'g'),'').length    
   }
 
   seek(tickRelative:number):void {
