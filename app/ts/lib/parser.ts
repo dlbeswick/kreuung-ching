@@ -232,7 +232,7 @@ class Grammar {
     return this.rules.find(r => r.name == name) || this.terminals.find(t => t.name == name)
   }
   
-  tokenize(input) {
+  tokenize(input):[string[],string|null] {
     let result = []
     
     nextInput: while (input) {
@@ -247,10 +247,10 @@ class Grammar {
         }
       }
       
-      throw "Unknown token at '" + input.slice(0, 50) + (input.length > 50 ? "...'" : '')
+      return [result, "Unknown token at '" + input.slice(0, 50) + (input.length > 50 ? "...'" : '')]
     }
 
-    return result
+    return [result, null]
   }
 
   parse<T>(tokens, context?:T, debug=false):[any,ParseState,T] {

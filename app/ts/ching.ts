@@ -128,7 +128,8 @@ class AppChing {
     private readonly ePlay:HTMLButtonElement,
     private readonly eStop:HTMLButtonElement,
     private readonly ePlayDelay:HTMLButtonElement,
-    private readonly eChingVises:HTMLElement[]
+    private readonly eChingVises:HTMLElement[],
+    private readonly ePatternError:HTMLElement
   ) {
     this.eStop.setAttribute('disabled',undefined)
     this.bpmControl = new BpmControl(eBpmJing, eChunJing, this.onTick.bind(this), this.onStop.bind(this))
@@ -516,15 +517,24 @@ class AppChing {
     this.eBpm.value = bpm.toString()
     this.bpmControl.change(bpm)
   }
-  
+
   onDrumPatternChange(value) {
-    const tokens = patterns.grammar.tokenize(value)
-    const [_, state, context] = patterns.grammar.parse(tokens, [new SegmentAction()])
-    if (state.error) {
-	    throw new Error(state.error + "\n" + state.context())
+    const [tokens, error] = patterns.grammar.tokenize(value)
+    if (error) {
+      this.ePatternError.innerText = error
+      this.ePatternError.classList.add("error-show")
+      return
     }
     
-    appChing.drumPatternNext = new DrumPattern(context)
+    const [_, state, context] = patterns.grammar.parse(tokens, [new SegmentAction()])
+    if (state.error) {
+      this.ePatternError.innerText = state.error + "\n" + state.context()
+      this.ePatternError.classList.add("error-show")
+      return
+    }
+    
+    this.ePatternError.classList.remove("error-show")
+    this.drumPatternNext = new DrumPattern(context)
   }
 }
 
@@ -696,7 +706,8 @@ document.addEventListener("deviceready", () => {
       document.getElementById("ching-visualize-1"),
       document.getElementById("ching-visualize-2"),
       document.getElementById("ching-visualize-3")
-    ]
+    ],
+    document.getElementById("pattern-error")
   )
 
   appChing.setupPreUserInteraction(
