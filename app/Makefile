@@ -4,7 +4,7 @@ SASSC = sassc
 
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
-build: www/css/app.css www/js/ching.js www/js www/css data
+build: www/css/app.css www/js/ching.js www/js www/css data www/js/s.js
 
 data:
 	test -n "$(DATAPATH)" || { echo "No data path given"; exit 1 ; }
@@ -26,8 +26,11 @@ www/js :
 www/css :
 	mkdir -p $@
 
+www/js/s.js: js/s.js
+	cp $< $@
+
 www/js/ching.js: ts/*.ts ts/lib/*.ts
-	"$(TYPESCRIPT)" --noEmitOnError --target es2019 --module es2015 --outDir www/js ts/ching.ts ts/parser_test.ts
+	"$(TYPESCRIPT)" --noEmitOnError --target es2019 --module system --outDir www/js ts/ching.ts ts/parser_test.ts
 
 www/css/app.css : sass/app.scss
 	"$(SASSC)" $< $@
