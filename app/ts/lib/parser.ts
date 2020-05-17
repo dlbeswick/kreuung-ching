@@ -22,8 +22,8 @@
 /**
  * A recursive descent parser.
  */
-interface Parseable {
-  parserMatch(state:ParseState)
+interface Parseable<T> {
+  parserMatch(state:ParseState):AstNode<T>|null
 }
 
 class Token {
@@ -31,11 +31,12 @@ class Token {
   }
 }
 
-abstract class Terminal implements Parseable {
+abstract class Terminal implements Parseable<string> {
   constructor(readonly name:string) {
   }
-  abstract lexerMatch(s:string)
-  abstract parserMatch(state)
+  
+  abstract lexerMatch(s:string):[Token, string]|null
+  abstract parserMatch(state):AstNode<string>|null
 }
 
 class TerminalLit extends Terminal {
@@ -49,7 +50,7 @@ class TerminalLit extends Terminal {
     this.token = new Token(this, lit)
   }
   
-  lexerMatch(s:string) {
+  lexerMatch(s:string):[Token, string]|null {
     if (s.startsWith(this.lit)) {
       return [this.token, s.slice(this.lit.length)]
     } else {
@@ -57,7 +58,7 @@ class TerminalLit extends Terminal {
     }
   }
 
-  parserMatch(state:ParseState) {
+  parserMatch(state:ParseState):AstNode<string>|null {
     if (state.token.terminal === this) {
       state.advance(1)
       return this.ast
@@ -85,8 +86,8 @@ class TerminalRegex extends Terminal {
   constructor(name:string, readonly regex:RegExp, group?:number, optimizedValue?:string) {
     super(name)
     if (group == undefined) {
-      this.optimizedToken = new Token(this, null)
-      this.optimizedAst = new AstNode(null, null, optimizedValue)
+      this.optimizedToken = new Token(this, optimizedValue)
+      this.optimizedAst = new AstNode<string>(null, null, optimizedValue)
       this.group = 0
     } else {
       this.group = group
@@ -102,7 +103,7 @@ class TerminalRegex extends Terminal {
     const token = state.token
     if (token.terminal === this) {
       state.advance(1)
-      return this.optimizedAst || new AstNode(null, null, token.lexeme)
+      return this.optimizedAst || new AstNode<string>(null, null, token.lexeme)
     }
     
     return null
@@ -126,7 +127,7 @@ class AstNode<T> {
   }
 }
 
-class ParseRule<T> implements Parseable {
+class ParseRule<T> implements Parseable<T> {
   /**
    * @param alternatives A list of list of strings, matching rule names. Alternatives can be left-recursive with rules.
    * @param semantic A function (astNodes) => <semantic data>

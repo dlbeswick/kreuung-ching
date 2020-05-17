@@ -19,8 +19,10 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Instrument, InstrumentComposite,InstrumentDrumFm, InstrumentDrumGabber, InstrumentFm, InstrumentNodeFmExp,
-         InstrumentNodeFmLin, InstrumentSample, ParamsInstrumentDrumFm, Sample } from "./instrument.js";
+import {
+  Instrument, InstrumentComposite,InstrumentDrumFm, InstrumentDrumGabber, InstrumentFm,
+  InstrumentNodeFmExp, InstrumentNodeFmLin, InstrumentSample, ParamsInstrumentDrumFm, Sample
+} from "./instrument.js";
 import { makeShaper } from "./shaper.js";
 import { assert } from "./lib/assert.js";
 import { RandLcg } from "./lib/rand.js";

@@ -255,16 +255,16 @@ class ActionDrumPattern implements ActionTimespan {
 export const grammar = new Grammar(
   [
 	new TerminalRegex("REST", /^x/i, undefined, 'x'),
-	new TerminalRegex("SPACE", /^\s+/),
+	new TerminalRegex("SPACE", /^\s+/, undefined, ' '),
 	new TerminalRegex("DIGIT", /^\d/, 0),
 	new TerminalLit("PERIOD", "."),
 	new TerminalLit("PERCENT", "%"),
 	new TerminalLit("SLASH", "/"),
-	new TerminalRegex("BPM", /^BPM/i),
-	new TerminalRegex("END", /^END/i),
-	new TerminalRegex("WAIT", /^WAIT/i),
-	new TerminalRegex("CHUN", /^CHUN/i),
-	new TerminalRegex("COMMENT", /^#.*/),
+	new TerminalRegex("BPM", /^BPM/i, undefined, 'BPM'),
+	new TerminalRegex("END", /^END/i, undefined, 'END'),
+	new TerminalRegex("WAIT", /^WAIT/i, undefined, 'WAIT'),
+	new TerminalRegex("CHUN", /^CHUN/i, undefined, 'CHUN'),
+	new TerminalRegex("COMMENT", /^#.*/, 0),
   ],
   [
 	new ParseRule(

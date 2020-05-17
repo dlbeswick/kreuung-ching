@@ -528,7 +528,7 @@ class AppChing {
     
     const [_, state, context] = patterns.grammar.parse(tokens, [new SegmentAction()])
     if (state.error) {
-      this.ePatternError.innerText = state.error + "\n" + state.context()
+      this.ePatternError.innerText = state.error + "\nat:\n" + state.context()
       this.ePatternError.classList.add("error-show")
       return
     }
