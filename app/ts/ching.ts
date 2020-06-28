@@ -264,7 +264,7 @@ class AppChing {
     const quietNoiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.25, audioCtx.sampleRate);
     const quietNoiseBufferData = quietNoiseBuffer.getChannelData(0);
     for (var i = 0; i < quietNoiseBuffer.length; i+=audioCtx.sampleRate / 100) {
-      quietNoiseBufferData[Math.floor(i)] = (-1 + Math.random() * 2) * 0.0001;
+      quietNoiseBufferData[Math.floor(i)] = (-1 + Math.random() * 2) * 0.00001;
     }
     this.quietNoise = audioCtx.createBufferSource()
     this.quietNoise.buffer = quietNoiseBuffer
@@ -414,6 +414,10 @@ class AppChing {
   }
 
   onPlay() {
+    if (device.platform != 'browser') {
+      cordova.plugins.backgroundMode.enable()
+    }
+    
     this.glongSet.kill()
 
     this.bpmControl.stop()
@@ -433,6 +437,10 @@ class AppChing {
   }
 
   onStop() {
+    if (device.platform != 'browser') {
+      cordova.plugins.backgroundMode.disable()
+    }
+    
     window.clearTimeout(this.chupChupTimeout)
     this.chupChupTimeout = null
     this.eStop.disabled = true
@@ -691,7 +699,7 @@ export function programStateDeserialize() {
       const es = document.getElementsByTagName('input')
       for (let i = 0; i < es.length; ++i) {
         const e = es[i] as HTMLInputElement
-        if (ser[e.id] != undefined) {
+        if (e && ser[e.id] != undefined) {
           e.value = ser[e.id]
         }
       }
@@ -702,7 +710,7 @@ export function programStateDeserialize() {
       const es = document.getElementsByTagName('textarea')
       for (let i = 0; i < es.length; ++i) {
         const e = es[i]
-        if (ser[e.id] != undefined) {
+        if (e && ser[e.id] != undefined) {
           e.textContent = ser[e.id]
         }
       }
@@ -713,7 +721,7 @@ export function programStateDeserialize() {
       const es = document.getElementsByTagName('select')
       for (let i = 0; i < es.length; ++i) {
         const e = es[i] as HTMLSelectElement
-        if (ser[e.id] != undefined) {
+        if (e && ser[e.id] != undefined) {
           e.selectedIndex = ser[e.id]
         }
       }
@@ -721,80 +729,99 @@ export function programStateDeserialize() {
   }
 }
 
-document.addEventListener("deviceready", () => {
-  document.addEventListener("pause", programStateSerialize)
-  document.addEventListener("resume", programStateDeserialize)
-  
-  document.getElementById("error").addEventListener("click", function () { this.style.display = "none" })
-  
-  const allButtons = document.getElementsByTagName("button")
-
-  appChing = new AppChing(
-    document.getElementById("bpm") as HTMLInputElement,
-    document.getElementById("bpm-jing") as HTMLInputElement,
-    document.getElementById("chun") as HTMLInputElement,
-    document.getElementById("chun-jing") as HTMLInputElement,
-    document.getElementById('tune-glong') as HTMLInputElement,
-    document.getElementById("hong") as HTMLInputElement,
-    document.getElementById("play") as HTMLButtonElement,
-    document.getElementById("stop") as HTMLButtonElement,
-    document.getElementById("play-delay") as HTMLButtonElement,
-    [
-      document.getElementById("ching-visualize-0"),
-      document.getElementById("ching-visualize-1"),
-      document.getElementById("ching-visualize-2"),
-      document.getElementById("ching-visualize-3")
-    ],
-    document.getElementById("pattern-error")
-  )
-
-  appChing.setupPreUserInteraction(
-    demandById("pattern-drum", HTMLTextAreaElement),
-    [
-      [document.getElementById("pattern-none"), ""],
-      [document.getElementById("pattern-lao"), patterns.pleyngDahmLao],
-      [document.getElementById("pattern-khmen"), patterns.pleyngDahmKhmen],
-      [document.getElementById("pattern-noyjaiyah"), patterns.dahmNoyJaiYah],
-      [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
-    ]
-  )
-
-  const setupAllButtons = () => {
-    // iPad needs to have its audio triggered from a user event. Run setup on any button. 
-    for (let i=0; i < allButtons.length; ++i) {
-      allButtons[i].addEventListener("click", setupFunc)
-    }
-  }
-
-  const removeSetupAllButtons = () => {
-    for (let i=0; i < allButtons.length; ++i) {
-      allButtons[i].removeEventListener("click", setupFunc)
-    }
-  }
-  
-  const setupFunc = e => {
-    removeSetupAllButtons()
+window.addEventListener("load", () => {
+  document.addEventListener("deviceready", () => {
+    document.addEventListener("back", programStateSerialize)
+    document.addEventListener("pause", programStateSerialize)
+    document.addEventListener("resume", programStateDeserialize)
     
-    appChing.setup(
-      document.getElementById("analyser") as HTMLCanvasElement,
-      document.getElementById("analyser-on") as HTMLButtonElement,
-      document.getElementById("analyser-off") as HTMLButtonElement,
-      document.getElementById("glongset") as HTMLSelectElement,
-      document.getElementById("play-ching-closed") as HTMLButtonElement,
-      document.getElementById("play-ching-open") as HTMLButtonElement,
-      document.getElementsByClassName("play-drum"),
-      document.getElementsByClassName("bpm-mod"),
-      document.getElementById('vol-glong'),
-      document.getElementById('vol-ching')
-    ).then(() => {
-      // Re-trigger the original click event as the setup function would have added new events.
-      e.target.click()
-    }).catch(ex => {
-      e.preventDefault()
-      setupAllButtons()
-      errorHandler(ex)
-    })
-  }
+    document.getElementById("error").addEventListener("click", function () { this.style.display = "none" })
 
-  setupAllButtons()
+    try {
+      programStateDeserialize()
+    } catch (msg) {
+      errorHandler("เจอปัญหาเมื่อโล๊ดสถานะโปรแกม: " + msg)
+    }
+    
+    if (device.platform != 'browser') {
+      cordova.plugins.backgroundMode.setDefaults({
+        title: 'กำลังทำงานในพื้นหลัง',
+        text: 'กำลังเล่นเสียง'
+      })
+      
+      cordova.plugins.backgroundMode.overrideBackButton()
+      cordova.plugins.backgroundMode.disableBatteryOptimizations()
+    }
+    
+    const allButtons = document.getElementsByTagName("button")
+
+    appChing = new AppChing(
+      document.getElementById("bpm") as HTMLInputElement,
+      document.getElementById("bpm-jing") as HTMLInputElement,
+      document.getElementById("chun") as HTMLInputElement,
+      document.getElementById("chun-jing") as HTMLInputElement,
+      document.getElementById('tune-glong') as HTMLInputElement,
+      document.getElementById("hong") as HTMLInputElement,
+      document.getElementById("play") as HTMLButtonElement,
+      document.getElementById("stop") as HTMLButtonElement,
+      document.getElementById("play-delay") as HTMLButtonElement,
+      [
+        document.getElementById("ching-visualize-0"),
+        document.getElementById("ching-visualize-1"),
+        document.getElementById("ching-visualize-2"),
+        document.getElementById("ching-visualize-3")
+      ],
+      document.getElementById("pattern-error")
+    )
+
+    appChing.setupPreUserInteraction(
+      demandById("pattern-drum", HTMLTextAreaElement),
+      [
+        [document.getElementById("pattern-none"), ""],
+        [document.getElementById("pattern-lao"), patterns.pleyngDahmLao],
+        [document.getElementById("pattern-khmen"), patterns.pleyngDahmKhmen],
+        [document.getElementById("pattern-noyjaiyah"), patterns.dahmNoyJaiYah],
+        [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
+      ]
+    )
+
+    const setupAllButtons = () => {
+      // iPad needs to have its audio triggered from a user event. Run setup on any button. 
+      for (let i=0; i < allButtons.length; ++i) {
+        allButtons[i].addEventListener("click", setupFunc)
+      }
+    }
+
+    const removeSetupAllButtons = () => {
+      for (let i=0; i < allButtons.length; ++i) {
+        allButtons[i].removeEventListener("click", setupFunc)
+      }
+    }
+    
+    const setupFunc = e => {
+      removeSetupAllButtons()
+      
+      appChing.setup(
+        document.getElementById("analyser") as HTMLCanvasElement,
+        document.getElementById("analyser-on") as HTMLButtonElement,
+        document.getElementById("analyser-off") as HTMLButtonElement,
+        document.getElementById("glongset") as HTMLSelectElement,
+        document.getElementById("play-ching-closed") as HTMLButtonElement,
+        document.getElementById("play-ching-open") as HTMLButtonElement,
+        document.getElementsByClassName("play-drum"),
+        document.getElementsByClassName("bpm-mod"),
+        document.getElementById('vol-glong'),
+        document.getElementById('vol-ching')
+      ).then(() => {
+        // Re-trigger the original click event as the setup function would have added new events.
+        e.target.click()
+      }).catch(ex => {
+        e.preventDefault()
+        setupAllButtons()
+        errorHandler(ex)
+      })
+    }
+
+    setupAllButtons()
+  })
 })
