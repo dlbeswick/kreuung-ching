@@ -99,6 +99,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 			  <textarea id="pattern-drum" cols="25" rows="10"></textarea>
 			  <div id="pattern-error" class="error"></div>
 			  <div>
+				<button id="pattern-help" title="Help" type="button">?</button>
 				<button id="pattern-save" title="Save" type="button">บันทึก</button>
 				<button id="pattern-del" title="Delete" type="button" disabled="true">ลบ</button>
 			  </div>
@@ -150,6 +151,60 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 		  <button class="save">บันทึก</button>
 		</div>
 	  </div>
+	</div>
+
+	<div id="dialog-pattern-help" class="split">
+	  <h1>ข้อมูลแบบเสียงกลอง</h1>
+	  <h2>ที่เล่นโน๊ต</h2>
+	  <dl>
+		<dt>x</dt><dd>การรอ (ไม่มีโน๊ต)</dd>
+		<dt>0-9</dt><dd>เล่นกลอง</dd>
+	  </dl>
+	  <h2>เวลาและจังหวะ</h2>
+	  <dl>
+		<dt>BPM120</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 120</dd>
+		<dt>BPM120/12</dt><dd>เปลี่ยนแปลง BPM จนถึง 120 ในช่วงเวลา 12 ห้อง</dd>
+		<dt>BPM110%</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 110% ของจำนวนปัจจุบัน</dd>
+		<dt>BPM110%/12</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 110% ของจำนวนปัจจุบัน ในช่วงเวลา 12 ห้อง</dd>
+		<dt>CHUN2</dt><dd>เปลี่ยนชั้นเป็น 2</dd>
+		<dt>END</dt><dd>ทำให้เพลงช้าขึ้นจนถึงหยุด</dd>
+		<dt>END/16</dt><dd>ทำให้เพลงช้าขึ้นจนถึงหยุดในช่วงเวลา 16 ห้อง</dd>
+		<dt>WAIT16</dt><dd>รอ 16 ห้อง</dd>
+	  </dl>
+	  <h2>อี่นๆ</h2>
+	  <p>
+		ใช้ตัว '#' ตอนเร่มต้นบรรทัดที่เร่มต้นการคิดเห็น (comment) แล้วบรรทัดที่เหลือจะถูกเมิน
+		โดยวิธีนี้คุณเขียนคำแนะนำหรือคำเตือนความจำอยู่ในแบบเสียงใด้
+	  </p>
+	  <p>คุณกำหนด BPM เริ่มต้นได้โดยใส่คำสั่งแบบ BPM ในที่แรกที่สุดของแบบเสียงของคุณ</p>
+	  <p>แบบเสียงจะเล่นต่อเรื่อยๆเว้นแต่เพลงมีคำสั่ง END</p>
+	  <p>คุณบันทึกและโล๊ดแบบเสียงได้ แต่กรุณาสำรองพวกมันที่สำคัญโดยตัดลอกแล้วว่างต้นฉบับไว้ในที่อื่น</p>
+	  
+	  <h1>Drum Pattern Help</h1>
+	  <h2>Playing Notes</h2>
+	  <dl>
+		<dt>x</dt><dd>รอ (ไม่มีโน๊ต) / Rest (no note)</dd>
+		<dt>0-9</dt><dd>เล่นกลอง / Play drum</dd>
+	  </dl>
+	  <h2>Time and Rhythm</h2>
+	  <dl>
+		<dt>BPM120</dt><dd>Gradually change BPM to 120.</dd>
+		<dt>BPM120/12</dt><dd>Change BPM to 120 over a period of 12 hong.</dd>
+		<dt>BPM110%</dt><dd>Gradually change BPM to 110% of its current value.</dd>
+		<dt>BPM110%/12</dt><dd>Gradually change BPM to 110% of its current value over 12 hong.</dd>
+		<dt>CHUN2</dt><dd>Change "chun" to 2.</dd>
+		<dt>END</dt><dd>Slow down and stop the song.</dd>
+		<dt>END/16</dt><dd>Slow down and stop the song over a period of 16 hong.</dd>
+		<dt>WAIT16</dt><dd>Wait for 16 hong.</dd>
+	  </dl>
+	  <h2>Other</h2>
+	  <p>
+		Start a line with '#' to begin a comment. The rest of the line will be ignored.
+		This can be used to write instructions or reminders in a pattern.
+	  </p>
+	  <p>You can set initial chun and BPM values by placing these commands at the top of your pattern.</p>
+	  <p>Patterns repeat unless there is an END command in the song.</p>
+	  <p>Patterns can be saved and loaded, but please back up your important patterns by copying and pasting the pattern text elsewhere.</p>
 	</div>
   </body>
 </html>

@@ -219,6 +219,27 @@ fieldset {
   }
 }
 
+.split {
+  visibility: hidden;
+  position: fixed;
+  left: 0;
+  top: 110%;
+  height: 50%;
+  align-items: center;
+  transition: all 0.25s;
+  box-shadow: 0px 0px 25px 0px;
+  background-color: wheat;
+  overflow: scroll;
+  padding: 10px 15px 10px 15px;
+  box-sizing: border-box;
+}
+
+.split-show {
+  top: 50%;
+  visibility: visible;
+  transition: all 0.25s;
+}
+
 #glong-patternctl {
 	display: flex;
 	@include media-query($on-palm) {
@@ -232,4 +253,18 @@ fieldset {
 #pattern-error {
 	width: 195px;
 	overflow: scroll;
+}
+
+#dialog-pattern-help {
+	font-size: smaller;
+	
+	dl {
+		dt {
+			font-family: monospace;
+			font-weight: bold;
+		}
+		dd {
+			padding-bottom: 0.5em;
+		}
+	}
 }

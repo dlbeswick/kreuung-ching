@@ -339,6 +339,14 @@ class AppChing {
         }
       )
     }
+
+    const eDlgPatternHelp = demandById("dialog-pattern-help")
+    demandById("pattern-help").addEventListener("click", function () {
+      if (eDlgPatternHelp.classList.contains("split-show"))
+        eDlgPatternHelp.classList.remove("split-show")
+      else
+        eDlgPatternHelp.classList.add("split-show")
+    })
   }
 
   userPatternsUpdate() {
