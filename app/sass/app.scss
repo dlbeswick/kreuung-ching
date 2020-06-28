@@ -102,7 +102,6 @@ button:active {
 
 	padding-left: 5px;
 	padding-right: 5px;
-	align-self: end;
 }
 
 .buttonstrip-sml {
@@ -150,6 +149,7 @@ button:active {
 
 .controlstrip {
 	display: flex;
+	align-items: flex-end;
 	margin-bottom: 1em;
 	margin-top: 1em;
 	width: 100%;
@@ -227,10 +227,10 @@ fieldset {
   height: 50%;
   align-items: center;
   transition: all 0.25s;
-  box-shadow: 0px 0px 25px 0px;
+  box-shadow: 0px 0px 25px 0px #777777;
   background-color: wheat;
   overflow: scroll;
-  padding: 10px 15px 10px 15px #777777;
+  padding: 10px 15px 10px 15px;
   box-sizing: border-box;
 }
 
