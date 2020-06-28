@@ -194,6 +194,7 @@ class AppChing {
 
     select.value = window.localStorage.getItem("selected-pleyng") ?? ''
     del.disabled = select.selectedIndex == 0
+    patternDrum.value = window.localStorage.getItem(select.value)
 
     patternDrum.addEventListener("change", () => this.onDrumPatternChange(patternDrum.value))
     
@@ -681,7 +682,8 @@ export function programStateSerialize() {
 }
 
 export function programStateDeserialize() {
-  // Note: onchange not necessary, as the user will always need to provide input to reinitialize the audiocontext.
+  // Note: most onchange not necessary, as the user will always need to provide input to reinitialize the
+  // audiocontext.
   const serialized = JSON.parse(window.localStorage.getItem("state"))
   if (serialized) {
     {
