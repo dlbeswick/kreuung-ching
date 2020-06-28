@@ -350,6 +350,10 @@ class AppChing {
   onPlayDelay() {
     this.bpmControl.stop()
     this.bpmControl.change(this.getBpm(this.eBpm.value))
+    
+    if (this.drumPatternNext != null)
+      this.drumPattern = this.drumPatternNext
+      
     this.drumPattern?.seek(this, 0)
     this.ePlay.setAttribute('disabled',undefined)
     this.eStop.removeAttribute('disabled')
