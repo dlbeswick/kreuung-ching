@@ -32,7 +32,7 @@ www/js/s.js: js/s.js
 www/js/ching.js: ts/*.ts ts/lib/*.ts
 	"$(TYPESCRIPT)" --noEmitOnError --target es2019 --module system --outDir www/js ts/ching.ts ts/parser_test.ts
 
-www/css/app.css : sass/app.scss
+www/css/app.css : sass/app.scss www/css
 	"$(SASSC)" $< $@
 
 run: build cordova-prepare
