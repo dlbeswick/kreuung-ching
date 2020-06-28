@@ -693,6 +693,8 @@ document.addEventListener("deviceready", () => {
   document.addEventListener("pause", programStateSerialize)
   document.addEventListener("resume", programStateDeserialize)
   
+  document.getElementById("error").addEventListener("click", function () { this.style.display = "none" })
+  
   const allButtons = document.getElementsByTagName("button")
 
   appChing = new AppChing(
@@ -724,8 +726,23 @@ document.addEventListener("deviceready", () => {
       [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
     ]
   )
+
+  const setupAllButtons = () => {
+    // iPad needs to have its audio triggered from a user event. Run setup on any button. 
+    for (let i=0; i < allButtons.length; ++i) {
+      allButtons[i].addEventListener("click", setupFunc)
+    }
+  }
+
+  const removeSetupAllButtons = () => {
+    for (let i=0; i < allButtons.length; ++i) {
+      allButtons[i].removeEventListener("click", setupFunc)
+    }
+  }
   
-  const setupFunc = (e) => {
+  const setupFunc = e => {
+    removeSetupAllButtons()
+    
     appChing.setup(
       document.getElementById("analyser") as HTMLCanvasElement,
       document.getElementById("analyser-on") as HTMLButtonElement,
@@ -738,16 +755,14 @@ document.addEventListener("deviceready", () => {
       document.getElementById('vol-glong'),
       document.getElementById('vol-ching')
     ).then(() => {
-      for (let i=0; i < allButtons.length; ++i) {
-        allButtons[i].removeEventListener("click", setupFunc)
-      }
+      // Re-trigger the original click event as the setup function would have added new events.
       e.target.click()
-    }).catch(errorHandler)
+    }).catch(ex => {
+      e.preventDefault()
+      setupAllButtons()
+      errorHandler(ex)
+    })
   }
 
-  // iPad needs to have its audio triggered from a user event. Run setup on any button, then re-trigger the
-  // original click event.
-  for (let i=0; i < allButtons.length; ++i) {
-    allButtons[i].addEventListener("click", setupFunc)
-  }
+  setupAllButtons()
 })
