@@ -35,6 +35,17 @@ var device:any = (window as any).device
 
 const MSG = messages.makeMultilingual([new messages.MessagesThai(), new messages.MessagesEnglish()])
 
+function *classDemandEach<T extends Element>(name:string, cnstr:new() => T) {
+  const els = document.getElementsByClassName(name)
+  if (els.length == 0)
+    throw(`No elements with class '${name}'`)
+  
+  for (let i = 0; i < els.length; ++i) {
+    assert(els[i] instanceof cnstr)
+    yield els[i] as T
+  }
+}
+
 export function withElement<T extends HTMLElement>(id:string, klass:new() => T, func:(t:T) => void) {
   func(demandById(id, klass))
 }
@@ -317,6 +328,17 @@ class AppChing {
     for (let i=0; i < bpmMods.length; ++i) {
       bpmMods[i].addEventListener("click", e => this.onBpmMod(e))
     }
+
+    for (const el of classDemandEach("chun-mod", HTMLButtonElement)) {
+      el.addEventListener(
+        "click",
+        () => {
+          const val = Math.max(0, Number(this.eChun.value) + Number(el.dataset.mod))
+          this.eChun.value = val.toString()
+          this.bpmControl.chunSet(val)
+        }
+      )
+    }
   }
 
   userPatternsUpdate() {
@@ -412,7 +434,7 @@ class AppChing {
 
   onTick():boolean {
     const currentTick = this.bpmControl.tick() - 1
-    const divisorChun = 2**(this.bpmControl.chun() + 1)
+    const divisorChun = 2**(this.bpmControl.chun + 1)
     
     if (currentTick % divisorChun == 0) {
       this.glongSet.chup(0, 1)

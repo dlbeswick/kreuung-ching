@@ -95,6 +95,16 @@ button:active {
 	}
 }
 
+.buttonstrip-mini {
+	button {
+		width: 2em;
+	}
+
+	padding-left: 5px;
+	padding-right: 5px;
+	align-self: end;
+}
+
 .buttonstrip-sml {
 	button {
 		width: 3em;
