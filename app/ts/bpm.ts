@@ -72,7 +72,7 @@ export class BpmControl {
   playing() { return this._playing }
   msTickPeriod() { return this._msTickPeriod }
 
-  chun() {
+  get chun() {
     return this._chun
   }
 
