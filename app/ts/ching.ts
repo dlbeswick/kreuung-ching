@@ -31,7 +31,7 @@ import * as messages from "./messages.js"
 import * as patterns from "./patterns.js"
 
 var cordova:any = (window as any).cordova
-var device:any = (window as any).device
+function device():any { return (window as any).device }
 
 const MSG = messages.makeMultilingual([new messages.MessagesThai(), new messages.MessagesEnglish()])
 
@@ -226,7 +226,7 @@ class AppChing {
     try {
       audioCtx = new ((<any>window).AudioContext || (<any>window).webkitAudioContext)()
     } catch(e) {
-      if (device.platform == 'browser') {
+      if (device().platform == 'browser') {
         throw MSG.errorAudioContextWeb(e)
       } else {
         throw MSG.errorAudioContextAndroid(e)
@@ -414,7 +414,7 @@ class AppChing {
   }
 
   onPlay() {
-    if (device.platform != 'browser') {
+    if (device().platform != 'browser') {
       cordova.plugins.backgroundMode.enable()
     }
     
@@ -437,7 +437,7 @@ class AppChing {
   }
 
   onStop() {
-    if (device.platform != 'browser') {
+    if (device().platform != 'browser') {
       cordova.plugins.backgroundMode.disable()
     }
     
@@ -743,7 +743,7 @@ window.addEventListener("load", () => {
       errorHandler("เจอปัญหาเมื่อโล๊ดสถานะโปรแกม: " + msg)
     }
     
-    if (device.platform != 'browser') {
+    if (device().platform != 'browser') {
       cordova.plugins.backgroundMode.setDefaults({
         title: 'กำลังทำงานในพื้นหลัง',
         text: 'กำลังเล่นเสียง'
