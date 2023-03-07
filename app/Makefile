@@ -4,7 +4,7 @@ SASSC = sassc
 
 .PHONY: clean serve build run run-emu cordova cordova-prepare browser data
 
-build: www/css/app.css www/js/ching.js www/js www/css data www/js/s.js
+build: www/css/app.css www/js/ching.js www/js www/css data www/js/s.js www/js/compat.js
 
 data:
 	test -n "$(DATAPATH)" || { echo "No data path given"; exit 1 ; }
@@ -25,6 +25,9 @@ www/js :
 
 www/css :
 	mkdir -p $@
+
+www/js/compat.js: js/compat.js
+	cp $< $@
 
 www/js/s.js: js/s.js
 	cp $< $@
