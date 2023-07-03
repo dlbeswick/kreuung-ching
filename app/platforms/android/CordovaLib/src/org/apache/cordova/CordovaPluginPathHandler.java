@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /*
        Licensed to the Apache Software Foundation (ASF) under one
        or more contributor license agreements.  See the NOTICE file
@@ -19,6 +17,22 @@
        under the License.
 */
 
-const Api = require('./Api');
+package org.apache.cordova;
 
-console.log(Api.version());
+import androidx.webkit.WebViewAssetLoader;
+
+/**
+ * Wrapper class for path and handler
+ */
+public class CordovaPluginPathHandler {
+
+    private final WebViewAssetLoader.PathHandler handler;
+
+    public  CordovaPluginPathHandler(WebViewAssetLoader.PathHandler handler) {
+        this.handler = handler;
+    }
+
+    public WebViewAssetLoader.PathHandler getPathHandler() {
+        return handler;
+    }
+}
