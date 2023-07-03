@@ -2,14 +2,9 @@ CORDOVA = node_modules/.bin/cordova
 TYPESCRIPT = node_modules/.bin/tsc
 SASSC = sassc
 
-.PHONY: clean serve build run run-emu cordova cordova-prepare browser data
+.PHONY: clean serve build run run-emu cordova cordova-prepare browser
 
-build: www/css/app.css www/js/ching.js www/js www/css data www/js/s.js www/js/compat.js
-
-data:
-	test -n "$(DATAPATH)" || { echo "No data path given"; exit 1 ; }
-	test -d www/data || mkdir www/data
-	rsync -rt --delete "$(DATAPATH)"* www/data/
+build: www/css/app.css www/js/ching.js www/js www/css www/js/s.js www/js/compat.js
 
 browser: build
 	"$(CORDOVA)" build browser

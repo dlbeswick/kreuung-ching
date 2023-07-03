@@ -9,8 +9,9 @@
 	<!-- Unfortunately, older Android versions' WebView doesn't have any support for the WebAudio APIs and so an
 		 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards, so that's the
 		 minimum version. -->
-	<preference name="android-minSdkVersion" value="21" />
+	<preference name="android-minSdkVersion" value="22" />
 	<preference name="permissions" value="none" />
+	<preference name="AndroidPersistentFileLocation" value="Compatibility" />
 
 	<!-- If a splash screen isn't defined, then
 		 "Error: The drawable "screen" in drawable-port-xhdpi has no declaration in the base drawable folder..."

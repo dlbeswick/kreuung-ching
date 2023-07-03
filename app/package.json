@@ -14,7 +14,6 @@
   "author": "David Beswick",
   "license": "GPL-3.0",
   "dependencies": {
-    "cordova-plugin-background-mode": "git+https://bitbucket.org/TheBosZ/cordova-plugin-run-in-background.git",
     "cordova-plugin-device": "^2.0.3",
     "cordova-plugin-file": "^6.0.2",
     "file": "^0.2.2"
@@ -28,8 +27,7 @@
   "cordova": {
     "plugins": {
       "cordova-plugin-device": {},
-      "cordova-plugin-file": {},
-      "cordova-plugin-background-mode": {}
+      "cordova-plugin-file": {}
     },
     "platforms": [
       "browser",
