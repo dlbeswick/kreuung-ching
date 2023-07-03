@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="org.mamoowung.kreuungching" version="1.6" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <feature name="Device">
+        <param name="android-package" value="org.apache.cordova.device.Device" />
+    </feature>
+    <feature name="File">
+        <param name="android-package" value="org.apache.cordova.file.FileUtils" />
+        <param name="onload" value="true" />
+    </feature>
+    <allow-navigation href="cdvfile:*" />
+    <feature name="BackgroundMode">
+        <param name="android-package" value="de.appplant.cordova.plugin.background.BackgroundMode" />
+    </feature>
+    <feature name="BackgroundModeExt">
+        <param name="android-package" value="de.appplant.cordova.plugin.background.BackgroundModeExt" />
+    </feature>
+    <name>เครื่องฉิ่ง</name>
+    <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
+    <author email="dlbeswick@gmail.com">David Beswick</author>
+    <icon src="res/ching.png" />
+    <splash src="res/ching.png" />
+    <preference name="loglevel" value="DEBUG" />
+    <preference name="KeepRunning" value="true" />
+    <preference name="android-minSdkVersion" value="21" />
+    <preference name="permissions" value="none" />
+</widget>

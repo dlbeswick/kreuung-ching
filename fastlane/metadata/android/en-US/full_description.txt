@@ -1,0 +1,1 @@
+A drum machine for practicing and performing tradition Thai music. Includes ching and Thai drum instruments, synthesized and recorded sound samples, and a drum pattern editor.

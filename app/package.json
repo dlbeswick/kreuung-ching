@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "kreuung-ching",
   "displayName": "เครื่องฉิ่ง",
   "version": "1.0.0",
@@ -19,9 +20,9 @@
     "file": "^0.2.2"
   },
   "devDependencies": {
-    "cordova": "^9.0.0",
-    "cordova-android": "^8.0.0",
-    "cordova-browser": "^6.0.0",
+    "cordova": "^12.0.0",
+    "cordova-android": "^12.0.0",
+    "cordova-browser": "^7.0.0",
     "typescript": "^3.8.3"
   },
   "cordova": {
