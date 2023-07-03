@@ -1,0 +1,213 @@
+<!--
+เครื่องฉิ่ง / Kreuung Ching
+This file is part of the Automatic Ching program for practicing
+Thai music.
+
+Copyright (C) 2019 David Beswick <dlbeswick@gmail.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>เครื่องฉิ่ง</title>
+	<link rel="stylesheet" href="css/app.css">
+	<script src="cordova.js"></script>
+	<script src="js/s.js"></script>
+	<script src="js/compat.js"></script>
+	<script>System.import('./js/ching.js')</script>
+  </head>
+  
+  <body>
+	<div class="wrapper">
+	  <div id="error" class="error"></div>
+
+	  <form id="ching">
+		<fieldset>
+		  <legend>การควบคุมเล่น / Play Controls</legend>
+		  <div class="controlstrip buttonstrip-lrg buttonstrip-stretch">
+			<button id="play" title="Play" type="button">เล่น</button>
+			<button id="play-delay" title="Play delayed" type="button">ฉับๆ</button>
+			<button id="stop" title="Stop" type="button" disabled>หยุด</button>
+		  </div>
+		  <div>
+			<label>ระดับเสียงฉิ่ง<input id="vol-ching" type="range" min="0" max="100" value="50"></label>
+		  </div>
+		  <div class="controlstrip">
+			<label>BPM
+			  <input type="number" id="bpm" placeholder="70.00" step="any" min="1.00" value="70.00" />
+			</label>
+			<label>จริง<input type="text" id="bpm-jing" disabled /></label>
+			<label>ห้อง<input type="text" id="hong" value="1" disabled /></label>
+		  </div>
+		  <div id="ching-visualize">
+			<div id="ching-visualize-0" class="ching-visualize-block" data-active-col="green"></div>
+			<div id="ching-visualize-1" class="ching-visualize-block" data-active-col="lightgrey"></div>
+			<div id="ching-visualize-2" class="ching-visualize-block" data-active-col="magenta"></div>
+			<div id="ching-visualize-3" class="ching-visualize-block" data-active-col="lightgrey"></div>
+		  </div>
+		  <div id="bpm-mods" class="controlstrip buttonstrip-lrg">
+			<div>
+			  <button class="bpm-mod" data-scale="0.98" type="button">-2%</button>
+			  <button class="bpm-mod" data-scale="1.02" type="button">+2%</button>
+			</div>
+			<div>
+			  <button class="bpm-mod" data-scale="0.95" type="button">-5%</button>
+			  <button class="bpm-mod" data-scale="1.05" type="button">+5%</button>
+			</div>
+			<div>
+			  <button class="bpm-mod" data-scale="0.5" type="button">/2</button>
+			  <button class="bpm-mod" data-scale="2" type="button">x2</button>
+			</div>
+		  </div>
+		  <div class="controlstrip">
+			<label>ชั้น
+			  <input type="number" id="chun" placeholder="2" step="1" value="2" min="0" max="10" />
+			</label>
+			<label>จริง<input type="text" id="chun-jing" disabled /></label>
+			<div class="buttonstrip-mini">
+			  <button class="chun-mod" type="button" data-mod="-1">-</button>
+			  <button class="chun-mod" type="button" data-mod="1">+</button>
+			</div>
+		  </div>
+		</fieldset>
+		<fieldset id="glong">
+		  <legend>กลอง / Drum</legend>
+		  <div>
+			<label>ชุดกลอง
+			  <select id="glongset">
+				<option value="sampled">ตัวอย่างเสียง</option>
+				<option value="synthesized">สังเคราะห์</option>
+			  </select>
+			</label>
+		  </div>
+		  <div id="glong-patternctl">
+			<div>
+			  <p>แบบเสียง</p>
+			  <textarea id="pattern-drum" cols="25" rows="10"></textarea>
+			  <div id="pattern-error" class="error"></div>
+			  <div>
+				<button id="pattern-help" title="Help" type="button">?</button>
+				<button id="pattern-save" title="Save" type="button">บันทึก</button>
+				<button id="pattern-del" title="Delete" type="button" disabled="true">ลบ</button>
+			  </div>
+			</div>
+			<div>
+			  <div>
+				<label>ระดับเสียง<input id="vol-glong" type="range" min="0" max="100" value="50"></label>
+			  </div>
+			  <div>
+				<label>การปรับเสียง<input id="tune-glong" type="range" min="0" max="100" value="50"></label>
+			  </div>
+			</div>
+			<div id="pattern-select">
+			  <label>แบบผู้ใช้งาน<select id="patterns-user"><option value=''>ไม่มี</option></select></label>
+			  <button id="pattern-none" title="Clear" type="button">ยกเลิก</button>
+			  <button id="pattern-lao" title="Lao-style" type="button">ตามเพลงลาว</button>
+			  <button id="pattern-khmen" title="Cambodian-style" type="button">ตามเพลงเขมร</button>
+			  <button id="pattern-noyjaiyah" type="button">ตามนัอยใจยา</button>
+			  <button id="pattern-omdeuk" type="button">เขมรอมตึ๊ก</button>
+			</div>
+		  </div>
+		</fieldset>
+		<fieldset>
+		  <legend>ตัววิเคระห์สเปกตรัม (ตัววิเคระห์แถบเสียงแยกส่วน) / Spectrum Analyzer</legend>
+		  <div class="buttonstrip-sml">
+			<button id="analyser-on" title="On" type="button">เปิด</button>
+			<button id="analyser-off" title="Off" type="button" disabled>ปิด</button>
+		  </div>
+		  <canvas id="analyser"></canvas>
+		  <div id="instruments" class="buttonstrip-sml">
+			<button id="play-ching-closed" type="button">ฉิ่ง 0</button>
+			<button id="play-ching-open" type="button">ฉิ่ง 1</button>
+			<button class="play-drum" type="button">กลอง ทั่ม</button>
+			<button class="play-drum" type="button">กลอง ติง</button>
+			<button class="play-drum" type="button">กลอง โจ๊ะ</button>
+			<button class="play-drum" type="button">กลอง จ๋ง</button>
+		  </div>
+		</fieldset>
+	  </form>
+	</div>
+	
+	<div id="dialog-save" class="modal">
+	  <div class="modal-content">
+		<div>
+		  <label>ชื่อ<input></input></label>
+		</div>
+		<div>
+		  <button class="cancel">ยกเลิก</button>
+		  <button class="save">บันทึก</button>
+		</div>
+	  </div>
+	</div>
+
+	<div id="dialog-pattern-help" class="split">
+	  <div>
+		<h1>ข้อมูลแบบเสียงกลอง</h1>
+		<h2>ที่เล่นโน๊ต</h2>
+		<dl>
+		  <dt>x</dt><dd>การรอ (ไม่มีโน๊ต)</dd>
+		  <dt>0-9</dt><dd>เล่นกลอง</dd>
+		</dl>
+		<h2>เวลาและจังหวะ</h2>
+		<dl>
+		  <dt>BPM120</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 120</dd>
+		  <dt>BPM120/12</dt><dd>เปลี่ยนแปลง BPM จนถึง 120 ในช่วงเวลา 12 ห้อง</dd>
+		  <dt>BPM110%</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 110% ของจำนวนปัจจุบัน</dd>
+		  <dt>BPM110%/12</dt><dd>เปลี่ยนแปลง BPM ช้าๆจนถึง 110% ของจำนวนปัจจุบัน ในช่วงเวลา 12 ห้อง</dd>
+		  <dt>CHUN2</dt><dd>เปลี่ยนชั้นเป็น 2</dd>
+		  <dt>END</dt><dd>ทำให้เพลงช้าขึ้นจนถึงหยุด</dd>
+		  <dt>END/16</dt><dd>ทำให้เพลงช้าขึ้นจนถึงหยุดในช่วงเวลา 16 ห้อง</dd>
+		  <dt>WAIT16</dt><dd>รอ 16 ห้อง</dd>
+		</dl>
+		<h2>อี่นๆ</h2>
+		<p>
+		  ใช้ตัว # ตอนเร่มต้นบรรทัดที่เร่มต้นการคิดเห็น (comment) แล้วก็บรรทัดที่เหลือจะถูกเมิน
+		  โดยวิธีนี้คุณเขียนคำแนะนำหรือคำเตือนความจำอยู่ในแบบเสียงใด้
+		</p>
+		<p>คุณกำหนด BPM เริ่มต้นได้โดยใส่คำสั่งแบบ BPM ในที่แรกที่สุดของแบบเสียงของคุณ</p>
+		<p>แบบเสียงจะเล่นต่อเรื่อยๆเว้นแต่เพลงมีคำสั่ง END</p>
+		<p>คุณบันทึกและโล๊ดแบบเสียงได้ แต่กรุณาสำรองพวกมันที่สำคัญโดยตัดลอกแล้วว่างตัวบทไว้ในที่อื่น</p>
+		
+		<h1>Drum Pattern Help</h1>
+		<h2>Playing Notes</h2>
+		<dl>
+		  <dt>x</dt><dd>Rest (no note)</dd>
+		  <dt>0-9</dt><dd>Play drum</dd>
+		</dl>
+		<h2>Time and Rhythm</h2>
+		<dl>
+		  <dt>BPM120</dt><dd>Gradually change BPM to 120.</dd>
+		  <dt>BPM120/12</dt><dd>Change BPM to 120 over a period of 12 hong.</dd>
+		  <dt>BPM110%</dt><dd>Gradually change BPM to 110% of its current value.</dd>
+		  <dt>BPM110%/12</dt><dd>Gradually change BPM to 110% of its current value over 12 hong.</dd>
+		  <dt>CHUN2</dt><dd>Change "chun" to 2.</dd>
+		  <dt>END</dt><dd>Slow down and stop the song.</dd>
+		  <dt>END/16</dt><dd>Slow down and stop the song over a period of 16 hong.</dd>
+		  <dt>WAIT16</dt><dd>Wait for 16 hong.</dd>
+		</dl>
+		<h2>Other</h2>
+		<p>
+		  Start a line with '#' to begin a comment. The rest of the line will be ignored.
+		  This can be used to write instructions or reminders in a pattern.
+		</p>
+		<p>You can set initial chun and BPM values by placing these commands at the top of your pattern.</p>
+		<p>Patterns repeat unless there is an END command in the song.</p>
+		<p>Patterns can be saved and loaded, but please back up your important patterns by copying and pasting the pattern text elsewhere.</p>
+	  </div>
+	</div>
+  </body>
+</html>
