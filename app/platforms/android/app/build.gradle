@@ -179,18 +179,16 @@ task cdvPrintProps {
 }
 
 android {
-    namespace cordovaConfig.PACKAGE_NAMESPACE
-
     defaultConfig {
         versionCode cdvVersionCode ?: new BigInteger("" + privateHelpers.extractIntFromManifest("versionCode"))
-        applicationId cordovaConfig.PACKAGE_NAMESPACE
+        applicationId privateHelpers.extractStringFromManifest("package")
 
         minSdkVersion cordovaConfig.MIN_SDK_VERSION
         if (cordovaConfig.MAX_SDK_VERSION != null) {
             maxSdkVersion cordovaConfig.MAX_SDK_VERSION
         }
         targetSdkVersion cordovaConfig.SDK_VERSION
-        compileSdkVersion cordovaConfig.COMPILE_SDK_VERSION
+        compileSdkVersion cordovaConfig.SDK_VERSION
     }
 
     lintOptions {
@@ -289,7 +287,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: '*.jar')
     implementation "androidx.appcompat:appcompat:${cordovaConfig.ANDROIDX_APP_COMPAT_VERSION}"
-    implementation "androidx.core:core-splashscreen:${cordovaConfig.ANDROIDX_CORE_SPLASHSCREEN_VERSION}"
 
     if (cordovaConfig.IS_GRADLE_PLUGIN_KOTLIN_ENABLED) {
         implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${cordovaConfig.KOTLIN_VERSION}"
