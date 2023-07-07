@@ -14,11 +14,11 @@
   "author": "David Beswick",
   "license": "GPL-3.0",
   "dependencies": {
-    "cordova": "^11.0.0",
+    "cordova": "^12.0.0",
     "file": "^0.2.2"
   },
   "devDependencies": {
-    "cordova-android": "^10.1.2",
+    "cordova-android": "^12.0.0",
     "cordova-browser": "^7.0.0",
     "cordova-plugin-device": "^2.1.0",
     "typescript": "^3.8.3"

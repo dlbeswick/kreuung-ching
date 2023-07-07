@@ -5,12 +5,11 @@
     <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
 	<content src="index.html" />
-	<icon src="res/ching.png" />
+	<icon src="www/img/logo.png" />
 
-	<!-- Very old Android versions' WebView doesn't have any support for the WebAudio APIs and so an
-		 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards.
-		 Cordova 11's minimum SDK version (22) is also higher than this minimum. -->
-	<preference name="android-minSdkVersion" value="22" />
+	<!-- Note: Very old Android versions' WebView doesn't have any support for the WebAudio APIs and so an
+		 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards. -->
 	<preference name="permissions" value="none" />
 	<preference name="AndroidPersistentFileLocation" value="Compatibility" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/logo.png" />
 </widget>
