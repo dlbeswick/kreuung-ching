@@ -134,95 +134,95 @@ export const pleyngKhmenOmDteuk="# เขมรอมตึ๊ก ท่อน �
 //
 // Instantaneous actions are processed before timespan actions.
 export class SegmentAction {
-  instants:ActionInstant[] = []
-  span?:ActionTimespan
+  instants: ActionInstant[] = []
+  span?: ActionTimespan
   
-  constructor(span?:ActionTimespan) {
+  constructor(span?: ActionTimespan) {
     this.span = span
   }
 }
 
 export interface ActionInstant {
-  run(bpm:BpmControl, isFirstTick:boolean)
+  run(bpm: BpmControl, isFirstTick: boolean): void
 }
 
 export interface ActionTimespan {
-  tick(glongSet:GlongSet, bpm:BpmControl):boolean
-  seek(tickRelative:number):void
-  length():number
+  tick(glongSet: GlongSet, bpm: BpmControl): boolean
+  seek(tickRelative: number): void
+  length(): number
 }
 
 class ActionWait implements ActionTimespan {
-  private _tick:number
-  constructor(private readonly _length:number) {}
+  private _tick = 0
+  constructor(private readonly _length: number) {}
 
-  seek(tickRelative:number):void {
+  seek(tickRelative: number): void {
     assert(tickRelative < this.length())
     this._tick = tickRelative
   }
 
   length() { return this._length }
   
-  tick(glongSet:GlongSet, bpm:BpmControl):boolean {
+  tick(glongSet: GlongSet, bpm: BpmControl): boolean {
     return this._tick++ == bpm.ticksPerHong() * this.length()
   }
 }
 
 abstract class ActionBpm implements ActionInstant {
-  constructor(private readonly time?:number) {}
+  constructor(private readonly time?: number) {}
 
-  abstract bpmEnd(bpm:number):number
+  abstract bpmEnd(bpm: number): number
   
-  run(bpm:BpmControl, isFirstTick:boolean) {
+  run(bpm: BpmControl, isFirstTick: boolean) {
     const bpmEnd = this.bpmEnd(bpm.bpm())
     bpm.bpmRampHongs(bpmEnd, isFirstTick ? 0 : this.time ?? 6)
   }
 }
 
 class ActionBpmAbsolute extends ActionBpm {
-  constructor(private readonly bpm:number, time?:number) {
+  constructor(private readonly bpm: number, time?: number) {
     super(time)
   }
 
-  bpmEnd(bpm:number):number { return this.bpm }
+  bpmEnd(bpm: number): number { return this.bpm }
 }
 
 class ActionBpmFactor extends ActionBpm {
-  constructor(private readonly factor:number, time?:number) {
+  constructor(private readonly factor: number, time?: number) {
     super(time)
   }
 
-  bpmEnd(bpm:number):number { return bpm * this.factor }
+  bpmEnd(bpm: number): number { return bpm * this.factor }
 }
 
 class ActionEnd implements ActionInstant {
-  constructor(private readonly time:number = 6) {}
+  constructor(private readonly time: number = 6) {}
 
-  run(bpm:BpmControl, isFirstTick:boolean) {
+  run(bpm: BpmControl, isFirstTick: boolean) {
     // Add a bit of hong of slowing (end on chup, default 6 hong)
     bpm.end(this.time + 0.1)
   }
 }
 
 class ActionChun implements ActionInstant {
-  constructor(private readonly chun:number) {}
+  constructor(private readonly chun: number) {}
 
-  run(bpm:BpmControl, isFirstTick:boolean) {
+  run(bpm: BpmControl, isFirstTick: boolean) {
     bpm.chunSet(this.chun)
   }
 }
 
 class ActionDrumPattern implements ActionTimespan {
-  private readonly _length:number
-  private idx:number = 0
+  private readonly _length: number
+  private idx: number = 0
 
   private static readonly registers = /[^0-9x]/
   
-  constructor(private readonly pattern:string) {
+  constructor(private readonly pattern: string) {
     this._length = pattern.replace(new RegExp(ActionDrumPattern.registers, 'g'),'').length    
   }
 
-  seek(tickRelative:number):void {
+  seek(tickRelative: number): void {
     assert(tickRelative < this._length)
     this.idx = 0
     for (let tick = 0; tick != tickRelative; ++this.idx) {
@@ -234,7 +234,7 @@ class ActionDrumPattern implements ActionTimespan {
   
   length() { return this._length }
   
-  tick(glongSet:GlongSet):boolean {
+  tick(glongSet: GlongSet): boolean {
     assert(this.idx <= this.pattern.length)
     if (this.idx == this.pattern.length) {
       return true
@@ -299,7 +299,7 @@ export const grammar = new Grammar(
 		while (true) {
 		  digits += nodes[0].lexeme
 		  if (nodes.length == 2) {
-			nodes = nodes[1].nodes
+			nodes = nodes[1].nodes!
 		  } else {
 			return Number(digits)
 		  }
@@ -323,7 +323,7 @@ export const grammar = new Grammar(
           for (const n of nodes)
 		    pattern += n.lexeme ?? ''
 		  if (nodes[nodes.length-1].nodes) {
-			nodes = nodes[nodes.length-1].nodes
+			nodes = nodes[nodes.length-1].nodes!
 		  } else {
 			break
 		  }
@@ -360,7 +360,7 @@ export const grammar = new Grammar(
 	  'end',
 	  [['END', 'SLASH', 'number'],
        ['END']],
-	  (nodes, ctx:SegmentAction[]) => {
+	  (nodes, ctx: SegmentAction[]) => {
         if (ctx[ctx.length-1].span)
           ctx.push(new SegmentAction())
         ctx[ctx.length-1].instants.push(new ActionEnd(nodes[2]?.semantic()))
@@ -369,7 +369,7 @@ export const grammar = new Grammar(
 	new ParseRule(
 	  'chun',
 	  [['CHUN', 'number']],
-	  (nodes, ctx:SegmentAction[]) => {
+	  (nodes, ctx: SegmentAction[]) => {
         if (ctx[ctx.length-1].span)
           ctx.push(new SegmentAction())
         ctx[ctx.length-1].instants.push(new ActionChun(nodes[1]?.semantic()))
@@ -378,7 +378,7 @@ export const grammar = new Grammar(
 	new ParseRule(
 	  'wait',
 	  [['WAIT', 'number']],
-	  (nodes, ctx:SegmentAction[]) => {
+	  (nodes, ctx: SegmentAction[]) => {
         const action = new ActionWait(nodes[1].semantic())
         if (ctx[ctx.length-1].span)
           ctx.push(new SegmentAction(action))

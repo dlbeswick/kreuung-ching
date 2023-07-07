@@ -43,11 +43,11 @@ export class RandLcg {
     return this.state >>> 0
   }
 
-  rand(start, end) {
+  rand(start: number, end: number) {
     return start + (end - start) * this.int32() * invBits32
   }
 
-  irand(start, endExclusive) {
+  irand(start: number, endExclusive: number) {
     return Math.trunc(start + (endExclusive - start) * (this.int32() - 1) * invBits32)
   }
 }

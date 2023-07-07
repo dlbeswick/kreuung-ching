@@ -23,19 +23,19 @@ import { makeShaper } from "./shaper.js";
 import { assert } from "./lib/assert.js";
 
 export abstract class Instrument {
-  abstract noteOn(time:number, gain:number)
-  abstract noteOff(time:number)
-  abstract kill(time:number)
-  abstract connect(node:AudioNode|AudioParam)
-  abstract disconnect()
-  abstract detune(val:number)
+  abstract noteOn(time: number, gain: number): void
+  abstract noteOff(time: number): void
+  abstract kill(time: number): void
+  abstract connect(node: AudioNode|AudioParam): void
+  abstract disconnect(): void
+  abstract detune(val: number): void
 }
 
 // An instrument with a designated output node
 export abstract class InstrumentOutput extends Instrument {
-  abstract output():AudioNode
+  abstract output(): AudioNode
 
-  connect(node:AudioNode|AudioParam) {
+  connect(node: AudioNode|AudioParam) {
     this.output().connect(node as any)
   }
   
@@ -47,15 +47,15 @@ export abstract class InstrumentOutput extends Instrument {
 export abstract class InstrumentSynced extends Instrument {
   abstract instruments(): Instrument[]
   
-  noteOn(time:number, gain=1) {
+  noteOn(time: number, gain=1) {
     for (let i of this.instruments()) i.noteOn(time, gain)
   }
   
-  noteOff(time) {
+  noteOff(time: number) {
     for (let i of this.instruments()) i.noteOff(time)
   }
   
-  kill(time) {
+  kill(time: number) {
     for (let i of this.instruments()) i.kill(time)
   }
 }
@@ -71,7 +71,7 @@ export class InstrumentComposite extends InstrumentSynced {
 
   instruments() { return this._instruments }
 
-  connect(node:AudioNode|AudioParam) {
+  connect(node: AudioNode|AudioParam) {
     for (let i of this.instruments()) i.connect(node)
   }
   
@@ -79,55 +79,44 @@ export class InstrumentComposite extends InstrumentSynced {
     for (let i of this.instruments()) i.disconnect()
   }
 
-  detune(val) {
+  detune(val: number) {
     for (let i of this.instruments()) i.detune(val)
   }
 }
 
 export abstract class InstrumentNodeFm extends InstrumentOutput {
-  osc:OscillatorNode
-  nodeGain:GainNode
-  ctx:AudioContext
+  osc: OscillatorNode
+  nodeGain: GainNode
   
   output() { return this.nodeGain }
   
-  constructor(audioCtx, type, freq, gain) {
+  constructor(readonly ctx: AudioContext, type: OscillatorType, freq: number) {
     super()
-    this.ctx = audioCtx
-    this.nodeGain = audioCtx.createGain()
+    this.nodeGain = ctx.createGain()
     this.nodeGain.gain.value = 0
     
     // 2018-12-31: iPad doesn't support node constructors, so use "create" functions.
-    this.osc = audioCtx.createOscillator()
+    this.osc = ctx.createOscillator()
     this.osc.type = type
     this.osc.frequency.value = freq
     this.osc.connect(this.nodeGain)
     this.osc.start()
   }
 
-  detune(val) {
+  detune(val: number) {
     this.osc.detune.setTargetAtTime(val, 0, 0.01)
   }
 }
 
 export class InstrumentNodeFmLin extends InstrumentNodeFm {
-  tAttack:number
-  gain:number
-  gSustain:number
-  tDecay:number
-  tRelease:number
 
-  constructor(audioCtx, type, freq, gain, tAttack, tDecay, gSustain, tRelease) {
-    super(audioCtx, type, freq, gain)
-
-    this.tAttack = tAttack
-    this.gSustain = gSustain
-    this.tDecay = tDecay
-    this.tRelease = tRelease
-    this.gain = gain
+  constructor(audioCtx: AudioContext, type: OscillatorType, freq: number, readonly gain: number,
+              readonly tAttack: number, readonly tDecay: number, readonly gSustain: number,
+              readonly tRelease: number) {
+    super(audioCtx, type, freq)
   }
 
-  noteOn(time, gainNoteOn=1) {
+  noteOn(time: number, gainNoteOn=1) {
     const startTime = time || this.ctx.currentTime
     this.nodeGain.gain.cancelScheduledValues(startTime)
     if (this.tAttack) {
@@ -139,29 +128,26 @@ export class InstrumentNodeFmLin extends InstrumentNodeFm {
     this.nodeGain.gain.linearRampToValueAtTime(this.gSustain * gainNoteOn, startTime + this.tAttack + this.tDecay)
   }
   
-  noteOff(time) {
+  noteOff(time: number) {
     this.nodeGain.gain.cancelScheduledValues(time)
     this.nodeGain.gain.linearRampToValueAtTime(0, time + this.tRelease)
   }
   
-  kill(time) {
+  kill(time: number) {
     this.nodeGain.gain.linearRampToValueAtTime(0, time + 0.0001)
   }
 }
 
 // FM instrument with exponential volume envelope
 export class InstrumentNodeFmExp extends InstrumentNodeFm {
-  cAttack:number
-  tAttack:number
-  gain:number
-  gSustain:number
-  cDecay:number
-  cRelease:number
+  gain: number
 
   output() { return this.nodeGain }
   
-  constructor(audioCtx, type, freq, gain, tAttack, cAttack, cDecay, gSustain, cRelease) {
-    super(audioCtx, type, freq, gain)
+  constructor(audioCtx: AudioContext, type: OscillatorType, freq: number, gain: number, readonly tAttack: number,
+              readonly cAttack: number, readonly cDecay: number, readonly gSustain: number,
+              readonly cRelease: number) {
+    super(audioCtx, type, freq)
 
     this.cAttack = cAttack
     this.tAttack = tAttack
@@ -171,7 +157,7 @@ export class InstrumentNodeFmExp extends InstrumentNodeFm {
     this.gain = gain
   }
 
-  noteOn(time, gainNoteOn=1) {
+  noteOn(time: number, gainNoteOn=1) {
     const startTime = time || this.ctx.currentTime
     this.nodeGain.gain.cancelScheduledValues(startTime)
     if (this.tAttack) {
@@ -183,22 +169,22 @@ export class InstrumentNodeFmExp extends InstrumentNodeFm {
     this.nodeGain.gain.setTargetAtTime(this.gSustain * gainNoteOn, startTime + this.tAttack, this.cDecay)
   }
   
-  noteOff(time) {
+  noteOff(time: number) {
     this.nodeGain.gain.cancelScheduledValues(time)
     this.nodeGain.gain.setTargetAtTime(0, time, this.cRelease)
   }
   
-  kill(time) {
+  kill(time: number) {
     this.nodeGain.gain.linearRampToValueAtTime(0, time + 0.0001)
   }
 }
 
 export class InstrumentFm extends InstrumentSynced {
-  fmNodes:InstrumentNodeFm[]
+  fmNodes: InstrumentNodeFm[]
 
   instruments() { return this.fmNodes }
   
-  constructor(fmNodes:InstrumentNodeFm[], connections?:number[][], gain=1) {
+  constructor(fmNodes: InstrumentNodeFm[], connections?: number[][], gain=1) {
     super()
     assert(fmNodes.length)
     
@@ -212,7 +198,7 @@ export class InstrumentFm extends InstrumentSynced {
     }
   }
   
-  connect(node:AudioNode|AudioParam) {
+  connect(node: AudioNode|AudioParam) {
     this.fmNodes[0].connect(node)
   }
   
@@ -220,7 +206,7 @@ export class InstrumentFm extends InstrumentSynced {
     this.fmNodes[0].disconnect()
   }
 
-  detune(val) {
+  detune(val: number) {
     this.fmNodes[0].detune(val)
   }
 }
@@ -230,27 +216,27 @@ export class ParamsInstrumentDrumFm {
   freqEnd=80
 
   // Gives some 'wobble' to the drum sustain
-  freqVary?:number
-  magFreqVary?:number
+  freqVary?: number
+  magFreqVary = 0
   
   decay=0.7
   freqDecay=0.07
   attack=0.1
-  type='sine'
+  type: OscillatorType = 'sine'
   gain=1
   magStrike=50
 
-  static make(params:any): ParamsInstrumentDrumFm {
+  static make(params: any): ParamsInstrumentDrumFm {
     return {...new ParamsInstrumentDrumFm(), ...params}
   }
 }
 
 export class InstrumentDrumFm extends InstrumentFm {
-  carrier:InstrumentNodeFm
-  params:ParamsInstrumentDrumFm
-  ctx:AudioContext
+  carrier: InstrumentNodeFm
+  params: ParamsInstrumentDrumFm
+  ctx: AudioContext
   
-  constructor(audioCtx:AudioContext, params:ParamsInstrumentDrumFm) {
+  constructor(audioCtx: AudioContext, params: ParamsInstrumentDrumFm) {
     const carrier = new InstrumentNodeFmLin(audioCtx, params.type, params.freqEnd, params.gain,
                                             params.attack, params.decay, 0, 0.0)
 
@@ -274,7 +260,7 @@ export class InstrumentDrumFm extends InstrumentFm {
     this.params = params
   }
 
-  noteOn(time:number, gain:number) {
+  noteOn(time: number, gain: number) {
     time = time || this.ctx.currentTime
     this.carrier.osc.frequency.setValueAtTime(this.params.freqStart, time)
     this.carrier.osc.frequency.exponentialRampToValueAtTime(this.params.freqEnd, time + this.params.freqDecay)
@@ -283,10 +269,10 @@ export class InstrumentDrumFm extends InstrumentFm {
 }
 
 export class InstrumentDrumGabber extends InstrumentOutput {
-  gain:GainNode
-  drum:InstrumentDrumFm
+  gain: GainNode
+  drum: InstrumentDrumFm
   
-  constructor(audioCtx, params:ParamsInstrumentDrumFm, overdrive=2) {
+  constructor(audioCtx: AudioContext, params: ParamsInstrumentDrumFm, overdrive=2) {
     super()
     
     this.gain = audioCtx.createGain()
@@ -294,20 +280,20 @@ export class InstrumentDrumGabber extends InstrumentOutput {
 
     this.drum = new InstrumentDrumFm(audioCtx, {...params, gain: overdrive} as ParamsInstrumentDrumFm)
     
-    const shaper = makeShaper(audioCtx, [this.drum], [], 1, 1, 1, '1x', 50)
+    const shaper = makeShaper(audioCtx, [this.drum], [], 1, 1, 1, 'none', 50)
 
     shaper.connect(this.gain)
   }
 
-  noteOn(time:number, gain:number) {
+  noteOn(time: number, gain: number) {
     this.drum.noteOn(time, gain)
   }
   
-  noteOff(time:number) {
+  noteOff(time: number) {
     this.drum.noteOff(time)
   }
 
-  kill(time:number) {
+  kill(time: number) {
     this.drum.kill(time)
   }
   
@@ -315,26 +301,29 @@ export class InstrumentDrumGabber extends InstrumentOutput {
     return this.gain
   }
   
-  detune(val) {
+  detune(val: number) {
     this.drum.detune(val)
   }
 }
 
 export class Sample {
-  url:string
-  private _data?:AudioBuffer
+  url: string
+  private _data?: AudioBuffer
   
-  constructor(url, readonly cordova:any) {
+  constructor(url: string, readonly cordova: any) {
     this.url = url
   }
 
-  data():AudioBuffer {
+  data(): AudioBuffer {
     assert(this._data, "load not called")
     return this._data
   }
 
-  private async loadBrowser(url:string) {
+  private async loadBrowser(url: string) {
     const response = await fetch(url)
+    if (!response.body)
+      throw new Error("No response body for url " + url)
+    
     const reader = response.body.getReader()
     let result = new Uint8Array()
     
@@ -358,46 +347,28 @@ export class Sample {
     }
   }
   
-  load(ctx:AudioContext):Promise<void> {
-    let url:string
-    let methodFetch:Promise<ArrayBuffer>
+  async load(ctx: AudioContext) {
+    let url: string
 
-    if (this.cordova.platformId == 'browser') {
-      url = "data/" + this.url
-      methodFetch = this.loadBrowser(url)
-    } else {
-      url = this.cordova.file.applicationDirectory + "www/data/" + this.url
+    url = "data/" + this.url
 
-      methodFetch = new Promise<any>((resolve, reject) => {
-        (window as any).resolveLocalFileSystemURL(url, resolve, e => reject(['resolveLocalFileSystemURL', e]))
-      }).then(fileEntry => new Promise<File>((resolve, reject) => {
-        fileEntry.file(resolve, reject)
-      })).then(file => new Promise<ArrayBuffer>((resolve, reject) => {
-        var reader = new FileReader()
-        reader.onload = (evt:ProgressEvent) => resolve(reader.result as ArrayBuffer)
-        reader.onerror = e => reject(['readAsArrayBuffer', e])
-        reader.readAsArrayBuffer(file)
-      }))
+    try {
+      const buffer = await this.loadBrowser(url)
+      this._data = await ctx.decodeAudioData(buffer)
+    } catch (e) {
+      throw "Error getting sample at '" + url + "': " + JSON.stringify(e)
     }
-
-    return methodFetch.then(buffer => new Promise<AudioBuffer>((resolve, reject) => {
-      ctx.decodeAudioData(buffer, resolve, e => reject(['decodeAudioData', e]))
-    })).then(data => {
-      this._data = data
-    }).catch(e => {
-      throw "Error getting sample at '" + url +"': " + JSON.stringify(e)
-    })
   }
 }
 
 export class InstrumentSample extends InstrumentOutput {
-  gain:GainNode
-  node?:AudioBufferSourceNode
-  ctx:AudioContext
-  sample?:Sample
+  gain: GainNode
+  node?: AudioBufferSourceNode
+  ctx: AudioContext
+  sample?: Sample
   _detune = 0.0
   
-  constructor(ctx:AudioContext, sample?:Sample) {
+  constructor(ctx: AudioContext, sample?: Sample) {
     super()
     this.ctx = ctx
     this.sample = sample
@@ -406,7 +377,7 @@ export class InstrumentSample extends InstrumentOutput {
 
   output() { return this.gain }
 
-  noteOn(time:number, gain:number):void {
+  noteOn(time: number, gain: number): void {
     if (this.sample) {
       if (this.node)
         this.node.disconnect()
@@ -419,17 +390,17 @@ export class InstrumentSample extends InstrumentOutput {
     }
   }
   
-  noteOff(time:number):void {
+  noteOff(time: number): void {
     if (this.node) {
       this.node.stop(time)
     }
   }
   
-  kill(time:number):void {
+  kill(time: number): void {
     this.noteOff(time)
   }
 
-  detune(val:number) {
+  detune(val: number) {
     this._detune = val
   }
 }

@@ -21,44 +21,44 @@
 
 interface Messages {
   readonly name: string
-  errorAudioContextAndroid(e:Error):string
-  errorAudioContextWeb(e:Error):string
-  errorGlongsetBad(setName:string):string
+  errorAudioContextAndroid(e: Error): string
+  errorAudioContextWeb(e: Error): string
+  errorGlongsetBad(setName: string): string
 }
 
 export class MessagesEnglish implements Messages {
   name = "English"
-  errorAudioContextAndroid(e:Error) {
+  errorAudioContextAndroid(e: Error) {
     return "There was a problem creating the AudioContext object. Please try updating Chrome or the Android System Webview component. Error detail: " + e.message
   }
-  errorAudioContextWeb(e:Error) {
+  errorAudioContextWeb(e: Error) {
     return "There was a problem creating the AudioContext object. Please try updating your web browser. Error detail: " + e.message
   }
-  errorGlongsetBad(setName:string) { return "Unknown glongset " + setName }
+  errorGlongsetBad(setName: string) { return "Unknown glongset " + setName }
 }
 
 export class MessagesThai implements Messages {
   name = "ไทย"
-  errorAudioContextAndroid(e:Error) {
+  errorAudioContextAndroid(e: Error) {
     return "เจอปัญหาตอนสร้าง AudioContext กรุณาลองอัปเดต Android System WebView ข้อมูลปัญหาคือ: " + e.message
   }
-  errorAudioContextWeb(e:Error) {
+  errorAudioContextWeb(e: Error) {
     return "เจอปัญหาตอนสร้าง AudioContext กรุณาลองอัปเดตเว็บบราว์เซอร์ ข้อมูลปัญหาคือ: " + e.message
   }
-  errorGlongsetBad(setName:string) { return "ไม่รู้จักชุดกลอง " + setName }
+  errorGlongsetBad(setName: string) { return "ไม่รู้จักชุดกลอง " + setName }
 }
 
-function msgJoin(vals:any[]): string | ((...a:any) => string) {
+function msgJoin(vals: any[]): string | ((...a: any) => string) {
   if (typeof vals[0] == "string")
     return vals.join(" / ");
   else
-    return (...a:any) => vals.map(f => f(...a)).join(" / ");
+    return (...a: any) => vals.map(f => f(...a)).join(" / ");
 }
 
-export function makeMultilingual(languages:Messages[]): Messages {
-  let result = {}
+export function makeMultilingual(languages: Messages[]): Messages {
+  let result: any = {}
   for (let p of Object.keys(languages[0])) {
-    result[p] = msgJoin(languages.map(l => l[p]))
+    result[p] = msgJoin(languages.map((l: any) => l[p]))
   }
   return result as Messages
 }

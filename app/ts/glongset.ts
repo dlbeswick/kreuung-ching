@@ -28,20 +28,20 @@ import { assert } from "./lib/assert.js";
 import { RandLcg } from "./lib/rand.js";
 
 export abstract class GlongSet {
-  abstract chingGet():Instrument
-  abstract chupGet():Instrument
-  abstract glongs():Instrument[]
+  abstract chingGet(): Instrument
+  abstract chupGet(): Instrument
+  abstract glongs(): Instrument[]
 
   async init() {}
   
-  chup(time:number, gain:number):void {
+  chup(time: number, gain: number): void {
     this.chupGet().noteOn(time, gain)
     this.chingGet().kill(time)
   }
-  ching(time:number, gain:number):void {
+  ching(time: number, gain: number): void {
     this.chingGet().noteOn(time, gain)
   }
-  glong(time:number, gain:number, idx:number):void {
+  glong(time: number, gain: number, idx: number): void {
     assert(idx >= 0)
     if (idx < this.glongs().length) {
       // tbd: encode mutually exclusive instruments in data
@@ -60,32 +60,30 @@ export abstract class GlongSet {
     }
   }
 
-  instruments():Instrument[] {
+  instruments(): Instrument[] {
     return [this.chingGet(), this.chupGet()].concat(this.glongs())
   }
 
-  abstract connect(gainChing:AudioNode, gainGlong:AudioNode):void
-  abstract disconnect():void
+  abstract connect(gainChing: AudioNode, gainGlong: AudioNode): void
+  abstract disconnect(): void
   kill() {
     for (let i of this.instruments())
       i.kill(0)
   }
-  detune(val:number) {
+  detune(val: number) {
     for (let i of this.glongs())
       i.detune(val)
   }
 }
 
 export class GlongSetSynthesized extends GlongSet {
-  _ching:Instrument
-  _chup:Instrument
-  distortionOpen:AudioNode
-  distortionChup:AudioNode
-  gainChing:GainNode
-  ctx:AudioContext
-  drums:Instrument[]
+  _ching: Instrument
+  _chup: Instrument
+  distortionChup: AudioNode
+  gainChing: GainNode
+  drums: Instrument[]
   
-  constructor(ctx) {
+  constructor(readonly ctx: AudioContext) {
     super()
 
     this.ctx = ctx
@@ -95,7 +93,7 @@ export class GlongSetSynthesized extends GlongSet {
     const closeFreq = 5400.0
     const chingGain = 0.1 // gain must be low to avoid triggering the waveshaper during sustain
     
-    const chingHarmonic = (freq, gain, release) =>
+    const chingHarmonic = (freq: number, gain: number, release: number) =>
       new InstrumentNodeFmExp(ctx, 'sine', freq, gain*25, 0.0, 0.0, 0.02, gain, release)
     
     this._ching = new InstrumentComposite(
@@ -178,36 +176,36 @@ export class GlongSetSynthesized extends GlongSet {
   chupGet() { return this._chup }
   glongs() { return this.drums }
 
-  ching(time, gain) {
+  ching(time: number, gain: number) {
     super.ching(time, gain)
     // Once the open ching has finished decaying from the distortion phase, it must begin its release.
     this.chingGet().noteOff((time || this.ctx.currentTime) + 0.1)
   }
   
-  connect(gainChing:AudioNode, gainGlong:AudioNode):void {
+  connect(gainChing: AudioNode, gainGlong: AudioNode): void {
     for (let i of [this.distortionChup, this.gainChing]) i.connect(gainChing)
     for (let i of this.drums) i.connect(gainGlong)
   }
 
-  disconnect():void {
+  disconnect(): void {
     for (let i of [this.distortionChup, this.gainChing]) i.disconnect()
     for (let i of this.drums) i.disconnect()
   }
 }
 
 export class GlongSetSampled extends GlongSet {
-  chups:Sample[]
-  chings:Sample[]
-  smpsGlong:Sample[][]
-  _ching:InstrumentSample
-  _chup:InstrumentSample
-  _glongs:InstrumentSample[]
-  valsRnd:number[] = []
-  rand:RandLcg = new RandLcg()
-  ctx:AudioContext
+  chups: Sample[]
+  chings: Sample[]
+  smpsGlong: Sample[][]
+  _ching: InstrumentSample
+  _chup: InstrumentSample
+  _glongs: InstrumentSample[]
+  valsRnd: number[] = []
+  rand: RandLcg = new RandLcg()
+  ctx: AudioContext
   
-  constructor(ctx:AudioContext, chups:Sample[], chings:Sample[], glongs:Sample[][], chupGain:number=1.0,
-              chingGain:number=1.0, glongGain:number=1.0) {
+  constructor(ctx: AudioContext, chups: Sample[], chings: Sample[], glongs: Sample[][], chupGain: number=1.0,
+              chingGain: number=1.0, glongGain: number=1.0) {
     super()
     this.ctx = ctx
     this._ching = new InstrumentSample(ctx)
@@ -222,7 +220,7 @@ export class GlongSetSampled extends GlongSet {
     for (let g of this._glongs) g.gain.gain.value = glongGain
   }
 
-  samples():Sample[] {
+  samples(): Sample[] {
     return this.chups.concat(this.chings).concat(this.smpsGlong.reduce((a,b) => a.concat(b)))
   }
   
@@ -234,21 +232,21 @@ export class GlongSetSampled extends GlongSet {
   chupGet() { return this._chup }
   glongs() { return this._glongs }
 
-  private sampleRandom(smps:Sample[]):Sample {
+  private sampleRandom(smps: Sample[]): Sample {
     return smps[this.rand.irand(0, smps.length)]
   }
   
-  chup(time:number, gain:number):void {
+  chup(time: number, gain: number): void {
     this._chup.sample = this.sampleRandom(this.chups)
     super.chup(time, gain)
   }
   
-  ching(time:number, gain:number):void {
+  ching(time: number, gain: number): void {
     this._ching.sample = this.sampleRandom(this.chings)
     super.ching(time, gain)
   }
 
-  glong(time:number, gain:number, idx:number):void {
+  glong(time: number, gain: number, idx: number): void {
     assert(idx >= 0)
     if (idx < this._glongs.length) {
       this._glongs[idx].sample = this.sampleRandom(this.smpsGlong[idx])
@@ -256,13 +254,13 @@ export class GlongSetSampled extends GlongSet {
     }
   }
   
-  connect(gainChing:AudioNode, gainGlong:AudioNode):void {
+  connect(gainChing: AudioNode, gainGlong: AudioNode): void {
     this.chingGet().connect(gainChing)
     this.chupGet().connect(gainChing)
     for (let g of this.glongs()) g.connect(gainGlong)
   }
 
-  disconnect():void {
+  disconnect(): void {
     this.chingGet().disconnect()
     this.chupGet().disconnect()
     for (let g of this.glongs()) g.disconnect()

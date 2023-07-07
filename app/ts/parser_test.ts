@@ -19,9 +19,10 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { assert } from './lib/assert.js';
 import { Grammar, ParseRule, TerminalLit, TerminalRegex } from './lib/parser.js';
 
-const time = (desc, func) => {
+const time = (desc: string, func: () => void) => {
   const start = window.performance.now()
   let i = 0;
   for (; i < 1000; ++i) {
@@ -37,7 +38,7 @@ const time = (desc, func) => {
   log(result)
 }
 
-const replacer = (key, val) => {
+const replacer = (key: string, val: any) => {
   if (val != null && typeof val === "object" && typeof val.inspect === "function") {
 	return val.inspect()
   } else {
@@ -45,7 +46,7 @@ const replacer = (key, val) => {
   }
 }
 
-const log = (s,pretty=false) => {
+const log = (s: any, pretty=false) => {
   const body = document.getElementsByTagName("pre")[0]
 
   if (typeof s === 'string') {
@@ -103,8 +104,10 @@ function test() {
 		  while (true) {
 			action.ticks += 1
 			if (nodes.length == 2) {
+              assert(nodes[1].nodes)
 			  nodes = nodes[1].nodes
 			} else if (nodes.length == 3) {
+              assert(nodes[2].nodes)
 			  nodes = nodes[2].nodes
 			} else {
 			  return action
@@ -123,6 +126,7 @@ function test() {
 		  while (true) {
 			digits += nodes[0].lexeme
 			if (nodes.length == 2) {
+              assert(nodes[1].nodes)
 			  nodes = nodes[1].nodes
 			} else {
 			  return Number(digits)
@@ -141,6 +145,7 @@ function test() {
 		  while (true) {
 			length += 1
 			if (nodes.length == 2) {
+              assert(nodes[1].nodes)
 			  nodes = nodes[1].nodes
 			} else {
 			  return {tickRoowa: length}
@@ -187,7 +192,7 @@ xxxx xxxx xxxx xxxx\
 	["BPM 70 BPM60 END", false],
 	["BPM", false],
 	["BPM999xBPM888", true]
-  ]
+  ] as const
 
   inputs.forEach(([input, shouldSucceed]) => {
 	log(input)
@@ -199,7 +204,7 @@ xxxx xxxx xxxx xxxx\
 
 	log("")
 
-	const [semantics, state] = grammar.parse(tokens)
+	const [semantics, state] = grammar.parse(tokens[0], [])
 	if (state.error) {
 	  log(state.error + "\n" + state.context())
 	  if (shouldSucceed) {
@@ -221,7 +226,7 @@ xxxx xxxx xxxx xxxx\
   window.setTimeout(() => profile(grammar), 1000)
 }
 
-function profile(grammar) {
+function profile(grammar: Grammar) {
   const inputb = "\
 xxxx xxxx x231--- 0231-\n\
 BPM70\n\
@@ -234,7 +239,7 @@ xxxx xxxx xxxx xxxx\
   const tokens = grammar.tokenize(input)
   log('Input size ' + input.length)
   time('tokenize', () => grammar.tokenize(input))
-  time('parse + semantic', () => grammar.parse(tokens))
+  time('parse + semantic', () => grammar.parse(tokens[0], []))
 }
 
 function test2() {
@@ -279,6 +284,7 @@ function test2() {
 		  while (true) {
 			digits += nodes[0].lexeme
 			if (nodes.length == 2) {
+              assert(nodes[1].nodes)
 			  nodes = nodes[1].nodes
 			} else {
 			  return Number(digits)
@@ -300,6 +306,7 @@ function test2() {
 		  while (true) {
 			pattern += nodes[0].lexeme ?? ''
 			if (nodes.length == 2) {
+              assert(nodes[1].nodes)
 			  nodes = nodes[1].nodes
 			} else {
 			  break
@@ -354,7 +361,7 @@ xxxx xxxx xxxx xxxx\
 
   log("")
 
-  const [semantics, state] = grammar.parse(tokens)
+  const [semantics, state] = grammar.parse(tokens[0], [])
   if (state.error) {
 	log(state.error + "\n" + state.context())
   } else {

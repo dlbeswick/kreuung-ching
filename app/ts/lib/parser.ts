@@ -22,35 +22,38 @@
 /**
  * A recursive descent parser.
  */
+
+import { assert } from "./assert.js"
+
 interface Parseable<T> {
-  parserMatch(state:ParseState):AstNode<T>|null
+  parserMatch(state: ParseState): AstNode<T>|AstNode<string>|null
 }
 
 class Token {
-  constructor(readonly terminal:Terminal, readonly lexeme:string) {
+  constructor(readonly terminal: Terminal, readonly lexeme: string) {
   }
 }
 
 abstract class Terminal implements Parseable<string> {
-  constructor(readonly name:string) {
+  constructor(readonly name: string) {
   }
   
-  abstract lexerMatch(s:string):[Token, string]|null
-  abstract parserMatch(state):AstNode<string>|null
+  abstract lexerMatch(s: string): [Token, string]|null
+  abstract parserMatch(state: ParseState): AstNode<string>|null
 }
 
 class TerminalLit extends Terminal {
-  ast:AstNode<string>
-  token:Token
+  ast: AstNode<string>
+  token: Token
   
-  constructor(name:string, readonly lit:string) {
+  constructor(name: string, readonly lit: string) {
     super(name)
     this.lit = lit
-    this.ast = new AstNode(null, null, lit)
+    this.ast = new AstNode(undefined, undefined, lit)
     this.token = new Token(this, lit)
   }
   
-  lexerMatch(s:string):[Token, string]|null {
+  lexerMatch(s: string): [Token, string]|null {
     if (s.startsWith(this.lit)) {
       return [this.token, s.slice(this.lit.length)]
     } else {
@@ -58,7 +61,7 @@ class TerminalLit extends Terminal {
     }
   }
 
-  parserMatch(state:ParseState):AstNode<string>|null {
+  parserMatch(state: ParseState): AstNode<string>|null {
     if (state.token.terminal === this) {
       state.advance(1)
       return this.ast
@@ -79,31 +82,32 @@ class TerminalRegex extends Terminal {
    * for those tokens whose lexical content is usually unimportant, i.e. whitespace.
    */
 
-  optimizedToken:Token
-  optimizedAst:AstNode<string>
-  group:number
+  optimizedToken: Token|undefined = undefined
+  optimizedAst: AstNode<string>|undefined = undefined
+  group: number
   
-  constructor(name:string, readonly regex:RegExp, group?:number, optimizedValue?:string) {
+  constructor(name: string, readonly regex: RegExp, group?: number, optimizedValue?: string) {
     super(name)
     if (group == undefined) {
+      assert(optimizedValue)
       this.optimizedToken = new Token(this, optimizedValue)
-      this.optimizedAst = new AstNode<string>(null, null, optimizedValue)
+      this.optimizedAst = new AstNode<string>(undefined, undefined, optimizedValue)
       this.group = 0
     } else {
       this.group = group
     }
   }
 
-  lexerMatch(s) {
+  lexerMatch(s: string): [Token, string]|null {
     const m = this.regex.exec(s)
     return m ? [this.optimizedToken || new Token(this, m[this.group]), s.slice(m.index+m[0].length)] : null
   }
 
-  parserMatch(state) {
+  parserMatch(state: ParseState): AstNode<string>|null {
     const token = state.token
     if (token.terminal === this) {
       state.advance(1)
-      return this.optimizedAst || new AstNode<string>(null, null, token.lexeme)
+      return this.optimizedAst || new AstNode<string>(undefined, undefined, token.lexeme)
     }
     
     return null
@@ -115,10 +119,11 @@ class TerminalRegex extends Terminal {
 }
 
 class AstNode<T> {
-  constructor(readonly rule?:ParseRule<T>, readonly nodes?:AstNode<T>[], readonly lexeme?:string) {
+  constructor(readonly rule?: ParseRule<T>, readonly nodes?: (AstNode<T>|AstNode<string>)[], readonly lexeme?: string) {
   }
 
-  semantic(context?:any):T  {
+  semantic(context?: any): T|undefined  {
+    assert(this.nodes)
     return this.rule?.semantic(this.nodes, context)
   }
 
@@ -132,14 +137,14 @@ class ParseRule<T> implements Parseable<T> {
    * @param alternatives A list of list of strings, matching rule names. Alternatives can be left-recursive with rules.
    * @param semantic A function (astNodes) => <semantic data>
    */
-  alternativesResolved?:[string, ParseRule<T> | Terminal][][]
+  private alternativesResolved?: [string, ParseRule<T> | Terminal][][]
   
-  constructor(readonly name:string,
-              readonly alternatives:string[][],
-              readonly semantic:(n:AstNode<T>[], ctx?:any) => T)
+  constructor(readonly name: string,
+              readonly alternatives: string[][],
+              readonly semantic: (n: (AstNode<T>|AstNode<string>)[], ctx?: any) => T)
   {}
 
-  resolveAlternatives(grammar:Grammar) {
+  resolveAlternatives(grammar: Grammar) {
     this.alternativesResolved = this.alternatives.map(
       rhses => rhses.map(name => [name, grammar.getByName(name)])
     )
@@ -149,11 +154,11 @@ class ParseRule<T> implements Parseable<T> {
     )
   }
   
-  parserMatch(state):AstNode<T> {
+  parserMatch(state: ParseState): AstNode<T>|AstNode<string>|null {
     for (let iAlternatives = 0; iAlternatives < this.alternatives.length; ++iAlternatives) {
       const rhs = this.alternativesResolved![iAlternatives]
 
-      const result = []
+      const result: (AstNode<string>|AstNode<T>)[] = []
       let matched = true
       const stateOld = state.save()
       
@@ -173,7 +178,7 @@ class ParseRule<T> implements Parseable<T> {
       }
 
       if (matched) {
-        state.error = null
+        state.error = undefined
         return new AstNode(this, result)
       } else {
         state.restore(stateOld)
@@ -190,10 +195,10 @@ class ParseRule<T> implements Parseable<T> {
 }
 
 class ParseState {
-  error?:string
-  token:Token
+  error?: string
+  token: Token
   
-  constructor(readonly tokens:Token[], private idxToken=0) {
+  constructor(readonly tokens: Token[], private idxToken=0) {
     this.token = tokens[idxToken]
   }
 
@@ -201,12 +206,12 @@ class ParseState {
     return this.idxToken
   }
   
-  restore(state) {
+  restore(state: number) {
     this.idxToken = state
     this.token = this.tokens[this.idxToken]
   }
   
-  advance(num) {
+  advance(num: number) {
     this.idxToken += num
     this.token = this.tokens[this.idxToken]
   }
@@ -226,14 +231,16 @@ class Grammar {
    */
   private rulesResolved = false
   
-  constructor(readonly terminals:Terminal[], readonly rules:ParseRule<any>[]) {
+  constructor(readonly terminals: Terminal[], readonly rules: ParseRule<any>[]) {
   }
 
-  getByName(name) {
-    return this.rules.find(r => r.name == name) || this.terminals.find(t => t.name == name)
+  getByName(name: string) {
+    const result = this.rules.find(r => r.name == name) || this.terminals.find(t => t.name == name)
+    assert(result, 'Unknown grammar', name)
+    return result
   }
   
-  tokenize(input):[string[],string|null] {
+  tokenize(input: string): [Token[], string|null] {
     let result = []
     
     nextInput: while (input) {
@@ -254,7 +261,7 @@ class Grammar {
     return [result, null]
   }
 
-  parse<T>(tokens, context?:T, debug=false):[any,ParseState,T] {
+  parse<T>(tokens: Token[], context: T, debug=false): [any,ParseState,T] {
     if (!this.rulesResolved) {
       const result = this.rules.flatMap(r => r.resolveAlternatives(this))
       if (result.length)

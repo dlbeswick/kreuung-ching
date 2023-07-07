@@ -30,12 +30,12 @@ import { errorHandler } from "./lib/error_handler.js"
 import * as messages from "./messages.js"
 import * as patterns from "./patterns.js"
 
-var cordova:any = (window as any).cordova
-function device():any { return (window as any).device }
+var cordova: any = (window as any).cordova
+function device(): any { return (window as any).device }
 
 const MSG = messages.makeMultilingual([new messages.MessagesThai(), new messages.MessagesEnglish()])
 
-function *classDemandEach<T extends Element>(name:string, cnstr:new() => T) {
+function *classDemandEach<T extends Element>(name: string, cnstr: new() => T) {
   const els = document.getElementsByClassName(name)
   if (els.length == 0)
     throw(`No elements with class '${name}'`)
@@ -46,12 +46,12 @@ function *classDemandEach<T extends Element>(name:string, cnstr:new() => T) {
   }
 }
 
-export function withElement<T extends HTMLElement>(id:string, klass:new() => T, func:(t:T) => void) {
+export function withElement<T extends HTMLElement>(id: string, klass: new() => T, func:(t: T) => void) {
   func(demandById(id, klass))
 }
 
-export function demandById<T extends HTMLElement=HTMLElement>(id:string, klass?:new() => T):T {
-  const klass_:any = klass ?? HTMLElement
+export function demandById<T extends HTMLElement=HTMLElement>(id: string, klass?: new() => T): T {
+  const klass_: any = klass ?? HTMLElement
   
   const result = document.getElementById(id)
   if (result == undefined) {
@@ -67,13 +67,13 @@ window.onerror = errorHandler
 
 export class DrumPattern {
   private segmentIdx = -1
-  private lengthTicks:number
+  private lengthTicks: number
   
-  constructor(private readonly segments:SegmentAction[]) {
+  constructor(private readonly segments: SegmentAction[]) {
     this.lengthTicks = segments.reduce((acc, sa) => acc + (sa.span ? sa.span.length() : 0), 0)
   }
 
-  seek(app:AppChing, tick:number) {
+  seek(app: AppChing, tick: number) {
     tick = this.lengthTicks ? tick % this.lengthTicks : 0
     
     for (this.segmentIdx = 0; this.segmentIdx < this.segments.length; ++this.segmentIdx) {
@@ -94,60 +94,62 @@ export class DrumPattern {
     }
   }
 
-  tick(app:AppChing) {
+  tick(app: AppChing) {
     if (this.lengthTicks == 0)
       return
 
     const segment = this.segments[this.segmentIdx]
     assert(segment)
-    
-    if (!segment.span || segment.span.tick(app.glongSet, app.bpmControl)) {
-      this.segmentIdx = (this.segmentIdx + 1) % this.segments.length
-      this.segments[this.segmentIdx].span?.seek(0)
-      this.segments[this.segmentIdx].span?.tick(app.glongSet, app.bpmControl)
-      for (const i of this.segments[this.segmentIdx].instants)
-        i.run(app.bpmControl, (app.bpmControl.tick() % this.lengthTicks) == 0)
+
+    if (app.glongSet) {
+      if (!segment.span || segment.span.tick(app.glongSet, app.bpmControl)) {
+        this.segmentIdx = (this.segmentIdx + 1) % this.segments.length
+        this.segments[this.segmentIdx].span?.seek(0)
+        this.segments[this.segmentIdx].span?.tick(app.glongSet, app.bpmControl)
+        for (const i of this.segments[this.segmentIdx].instants)
+          i.run(app.bpmControl, (app.bpmControl.tick() % this.lengthTicks) == 0)
+      }
     }
   }
 }
 
 class AppChing {
   analyserActive = false
-  drumPattern?:DrumPattern
-  drumPatternNext?:DrumPattern
-  readonly bpmControl:BpmControl
+  drumPattern: DrumPattern|null = null
+  drumPatternNext: DrumPattern|null = null
+  readonly bpmControl: BpmControl
 
-  private glongSetDetune:number
-  glongSet?:GlongSet
+  private glongSetDetune: number = 0
+  glongSet?: GlongSet
   
-  private audioCtx?:AudioContext
-  private analyser?:AnalyserNode
-  private gainChing?:GainNode
-  private gainGlong?:GainNode
-  private gainMaster?:GainNode
-  private quietNoise?:AudioBufferSourceNode
+  private audioCtx?: AudioContext
+  private analyser?: AnalyserNode
+  private gainChing?: GainNode
+  private gainGlong?: GainNode
+  private gainMaster?: GainNode
+  private quietNoise?: AudioBufferSourceNode
 
-  private chupChupTimeout?:number
+  private chupChupTimeout?: number
   
   constructor(
-    private readonly eBpm:HTMLInputElement,
-    private readonly eBpmJing:HTMLInputElement,
-    private readonly eChun:HTMLInputElement,
-    private readonly eChunJing:HTMLInputElement,
-    private readonly tuneGlong:HTMLInputElement,
-    private readonly eHong:HTMLInputElement,
-    private readonly ePlay:HTMLButtonElement,
-    private readonly eStop:HTMLButtonElement,
-    private readonly ePlayDelay:HTMLButtonElement,
-    private readonly eChingVises:HTMLElement[],
-    private readonly ePatternError:HTMLElement
+    private readonly eBpm: HTMLInputElement,
+    private readonly eBpmJing: HTMLInputElement,
+    private readonly eChun: HTMLInputElement,
+    private readonly eChunJing: HTMLInputElement,
+    private readonly tuneGlong: HTMLInputElement,
+    private readonly eHong: HTMLInputElement,
+    private readonly ePlay: HTMLButtonElement,
+    private readonly eStop: HTMLButtonElement,
+    private readonly ePlayDelay: HTMLButtonElement,
+    private readonly eChingVises: HTMLElement[],
+    private readonly ePatternError: HTMLElement
   ) {
-    this.eStop.setAttribute('disabled',undefined)
+    this.eStop.setAttribute('disabled', '')
     this.bpmControl = new BpmControl(eBpmJing, eChunJing, this.onTick.bind(this), this.onStop.bind(this))
   }
 
   setupPreUserInteraction(
-    patternDrum:HTMLTextAreaElement,
+    patternDrum: HTMLTextAreaElement,
     presetsDrumPattern:[HTMLElement,string][]
   ) {
     const select = demandById("patterns-user", HTMLSelectElement)
@@ -184,7 +186,7 @@ class AppChing {
       "change",
       () => {
         window.localStorage.setItem("selected-pleyng", select.value)
-        patternDrum.value = window.localStorage.getItem(select.value)
+        patternDrum.value = window.localStorage.getItem(select.value)!
         this.onDrumPatternChange(patternDrum.value)
         del.disabled = select.selectedIndex == 0
       }
@@ -194,7 +196,7 @@ class AppChing {
 
     select.value = window.localStorage.getItem("selected-pleyng") ?? ''
     del.disabled = select.selectedIndex == 0
-    patternDrum.value = window.localStorage.getItem(select.value)
+    patternDrum.value = window.localStorage.getItem(select.value)!
 
     patternDrum.addEventListener("change", () => this.onDrumPatternChange(patternDrum.value))
     
@@ -211,18 +213,18 @@ class AppChing {
   }
   
   async setup(
-    eAnalyser:HTMLCanvasElement,
-    eAnalyserOn:HTMLButtonElement,
-    eAnalyserOff:HTMLButtonElement,
-    eGlongSelect:HTMLSelectElement,
-    ePlayChingClosed:HTMLButtonElement,
-    ePlayChingOpen:HTMLButtonElement,
-    ePlayGlongs:HTMLCollectionOf<Element>,
-    bpmMods:HTMLCollectionOf<Element>,
-    gainGlong:HTMLElement,
-    gainChing:HTMLElement
+    eAnalyser: HTMLCanvasElement,
+    eAnalyserOn: HTMLButtonElement,
+    eAnalyserOff: HTMLButtonElement,
+    eGlongSelect: HTMLSelectElement,
+    ePlayChingClosed: HTMLButtonElement,
+    ePlayChingOpen: HTMLButtonElement,
+    ePlayGlongs: HTMLCollectionOf<Element>,
+    bpmMods: HTMLCollectionOf<Element>,
+    gainGlong: HTMLInputElement,
+    gainChing: HTMLInputElement
   ) {
-    let audioCtx = null
+    let audioCtx: AudioContext
     try {
       audioCtx = new ((<any>window).AudioContext || (<any>window).webkitAudioContext)()
     } catch(e) {
@@ -249,6 +251,8 @@ class AppChing {
 
     handleSliderUpdate(this.tuneGlong, (alpha, init) => {
       this.glongSetDetune = -1000 + alpha * 2000.0
+
+      assert(this.glongSet)
       this.glongSet.detune(this.glongSetDetune)
     })
     
@@ -289,27 +293,40 @@ class AppChing {
 
     eAnalyserOn.addEventListener("click", e => {
       this.analyserActive = true
-      eAnalyserOn.setAttribute('disabled',undefined);
-      eAnalyserOff.removeAttribute('disabled');
+      eAnalyserOn.setAttribute('disabled', '')
+      eAnalyserOff.removeAttribute('disabled')
+      
+      assert(this.gainMaster)
+      assert(this.analyser)
       this.gainMaster.connect(this.analyser)
-      window.requestAnimationFrame((time) => analyserDraw(time, this.analyser, eAnalyser.getContext('2d')))
+
+      window.requestAnimationFrame((time) => {
+        assert(this.analyser)
+        
+        const ctx = eAnalyser.getContext('2d')
+        assert(ctx)
+        
+        analyserDraw(time, this.analyser, ctx)
+      })
     })
+    
     eAnalyserOff.addEventListener("click", e => {
       this.analyserActive = false
-      eAnalyserOff.setAttribute('disabled',undefined);
+      eAnalyserOff.setAttribute('disabled','');
       eAnalyserOn.removeAttribute('disabled');
-      this.gainMaster.disconnect(this.analyser)
+
+      if (this.gainMaster && this.analyser)
+        this.gainMaster.disconnect(this.analyser)
     })
-    eAnalyserOff.setAttribute('disabled',undefined)
+    
+    eAnalyserOff.setAttribute('disabled','')
 
-    ePlayChingOpen.addEventListener("click", e => this.glongSet.chup(0, 1) );
-    ePlayChingClosed.addEventListener("click", e => this.glongSet.ching(0,1) );
+    ePlayChingOpen.addEventListener("click", e => this.glongSet?.chup(0, 1) );
+    ePlayChingClosed.addEventListener("click", e => this.glongSet?.ching(0,1) );
     for (let i = 0; i < ePlayGlongs.length; ++i)
-      ePlayGlongs[i].addEventListener("click", e => this.glongSet.glong(0, 1, i) );
+      ePlayGlongs[i].addEventListener("click", e => this.glongSet?.glong(0, 1, i) );
 
-    for (let [ctl, gain]
-         of [[gainGlong, this.gainGlong],
-             [gainChing, this.gainChing]] as [HTMLElement,GainNode][]) {
+    for (let [ctl, gain] of [[gainGlong, this.gainGlong], [gainChing, this.gainChing]] as const) {
       handleSliderUpdate(
         ctl,
         (alpha, init) => {
@@ -373,7 +390,7 @@ class AppChing {
     })
   }
   
-  onSavePattern(name:string, pattern:string) {
+  onSavePattern(name: string, pattern: string) {
     window.localStorage.setItem("pleyng-" + name, pattern)
     this.userPatternsUpdate()
   }
@@ -386,19 +403,19 @@ class AppChing {
       this.drumPattern = this.drumPatternNext
       
     this.drumPattern?.seek(this, 0)
-    this.ePlay.setAttribute('disabled',undefined)
+    this.ePlay.setAttribute('disabled','')
     this.eStop.removeAttribute('disabled')
     const chup0 = () => {
-      this.glongSet.kill()
-      this.glongSet.chup(0, 1)
+      this.glongSet?.kill()
+      this.glongSet?.chup(0, 1)
       this.chupChupTimeout = window.setTimeout(chup1, 200)
     }
     const chup1 = () => {
-      this.glongSet.chup(0, 1)
+      this.glongSet?.chup(0, 1)
       this.chupChupTimeout = window.setTimeout(chup2, this.bpmControl.msTickPeriod() * 8)
     }
     const chup2 = () => {
-      this.glongSet.ching(0,1)
+      this.glongSet?.ching(0,1)
       this.chupChupTimeout = window.setTimeout(() => this.onPlay(), this.bpmControl.msTickPeriod() * 4)
     }
     chup0()
@@ -407,18 +424,14 @@ class AppChing {
   doPattern() {
     if (this.drumPatternNext != null) {
       this.drumPattern = appChing.drumPatternNext
-      this.drumPattern.seek(this, Math.max(0, this.bpmControl.tick()-1))
+      this.drumPattern?.seek(this, Math.max(0, this.bpmControl.tick()-1))
       this.drumPatternNext = null
     }
     this.drumPattern?.tick(this)
   }
 
   onPlay() {
-    if (device().platform != 'browser') {
-      cordova.plugins.backgroundMode.enable()
-    }
-    
-    this.glongSet.kill()
+    this.glongSet?.kill()
 
     this.bpmControl.stop()
     this.bpmControl.change(this.getBpm(this.eBpm.value))
@@ -427,31 +440,34 @@ class AppChing {
     this.drumPattern?.seek(this, 0)
     this.bpmControl.play()
     this.eStop.removeAttribute('disabled')
-    this.ePlay.setAttribute('disabled',undefined)
+    this.ePlay.setAttribute('disabled','')
 
+    assert(this.gainMaster)
+    assert(this.quietNoise)
     this.quietNoise.connect(this.gainMaster)
 
     if (this.analyserActive) {
+      assert(this.analyser)
       this.gainMaster.connect(this.analyser)
     }
   }
 
   onStop() {
-    if (device().platform != 'browser') {
-      cordova.plugins.backgroundMode.disable()
-    }
-    
     window.clearTimeout(this.chupChupTimeout)
-    this.chupChupTimeout = null
+    this.chupChupTimeout = undefined
     this.eStop.disabled = true
     this.ePlay.disabled = false
     this.ePlayDelay.disabled = false
+
+    assert(this.quietNoise)
     this.quietNoise.disconnect()
   }
 
-  onTick():boolean {
+  onTick(): boolean {
     const currentTick = this.bpmControl.tick() - 1
     const divisorChun = 2**(this.bpmControl.chun + 1)
+
+    assert(this.glongSet)
     
     if (currentTick % divisorChun == 0) {
       this.glongSet.chup(0, 1)
@@ -472,8 +488,10 @@ class AppChing {
     return true
   }
   
-  async onGlongsetChange(nameSet:string) {
-    let glongSet:GlongSet
+  async onGlongsetChange(nameSet: string) {
+    let glongSet: GlongSet
+
+    assert(this.audioCtx)
     
     switch (nameSet) {
       case "sampled":
@@ -534,11 +552,15 @@ class AppChing {
     if (this.glongSet) {
       this.glongSet.disconnect()
     }
+
+    assert(this.gainChing)
+    assert(this.gainGlong)
+    
     glongSet.connect(this.gainChing, this.gainGlong)
     this.glongSet = glongSet
   }
   
-  getBpm(anyVal:number|string) {
+  getBpm(anyVal: number|string) {
     const numBpm = Number(anyVal)
     if (numBpm != NaN) {
       return numBpm
@@ -547,9 +569,11 @@ class AppChing {
     }
   }
 
-  private onBpmMod(evt) {
+  private onBpmMod(evt: Event) {
     const e = evt.target
-    let bpm:number
+    assert(e instanceof HTMLElement)
+    
+    let bpm: number
     if (e.dataset.set) {
       bpm = Number(e.dataset.set)
     } else if (e.dataset.scale) {
@@ -561,7 +585,7 @@ class AppChing {
     this.bpmControl.change(bpm)
   }
 
-  onDrumPatternChange(value) {
+  onDrumPatternChange(value: string) {
     const [tokens, error] = patterns.grammar.tokenize(value)
     if (error) {
       this.ePatternError.innerText = error
@@ -582,13 +606,13 @@ class AppChing {
 }
 
 // Export just for debugging convenience
-export let appChing:AppChing
+export let appChing: AppChing
 
-function analyserDraw(time, analyser, canvasCtx) {
+function analyserDraw(time: number, analyser: AnalyserNode, canvasCtx: CanvasRenderingContext2D) {
   const updateFreq = (1/65) * 1000
   const bufferFft = new Float32Array(analyser.frequencyBinCount)
 
-  const loop = (lastTime, time, bufferImgOld) => {
+  const loop = (lastTime: number, time: number, bufferImgOld: ImageData) => {
     const canvasWidth = canvasCtx.canvas.width
     const canvasHeight = canvasCtx.canvas.height
 
@@ -635,7 +659,7 @@ function analyserDraw(time, analyser, canvasCtx) {
   loop(time, time, canvasCtx.getImageData(0, 0, canvasCtx.canvas.width, canvasCtx.canvas.height))
 }
 
-function handleSliderUpdate(ctl, onChange:(alpha: number, init: boolean) => void) {
+function handleSliderUpdate(ctl: HTMLInputElement, onChange:(alpha: number, init: boolean) => void) {
   const min = 0
   const max = 100
   ctl.addEventListener("input", () => onChange((Number(ctl.value) - min) / (max - min), false))
@@ -643,22 +667,22 @@ function handleSliderUpdate(ctl, onChange:(alpha: number, init: boolean) => void
   onChange((Number(ctl.value) - min) / (max - min), true)
 }
 
-function updateChingVis(eChingVises, phase) {
+function updateChingVis(eChingVises: HTMLElement[], phase: number) {
   for (let i = 0; i < eChingVises.length; ++i) {
     const e = eChingVises[i]
     if (phase == i) {
-      e.style.backgroundColor = e.dataset.activeCol;
+      e.style.backgroundColor = e.dataset.activeCol ?? 'red'
     } else {
-      e.style.backgroundColor = 'white';
+      e.style.backgroundColor = 'white'
     }
   }
 }
 
 export function programStateSerialize() {
-  const serialized = {"select":{}, "input":{}, "textarea": {}}
+  const serialized = {"select": {}, "input": {}, "textarea": {}} as any
   
   {
-    const ser = serialized["input"]
+    const ser: any = serialized["input"]
     const es = document.getElementsByTagName('input')
     for (let i = 0; i < es.length; ++i) {
       const e = es[i] as HTMLInputElement
@@ -667,7 +691,7 @@ export function programStateSerialize() {
   }
   
   {
-    const ser = serialized["textarea"]
+    const ser: any = serialized["textarea"]
     const es = document.getElementsByTagName('textarea')
     for (let i = 0; i < es.length; ++i) {
       const e = es[i]
@@ -692,7 +716,11 @@ export function programStateSerialize() {
 export function programStateDeserialize() {
   // Note: most onchange not necessary, as the user will always need to provide input to reinitialize the
   // audiocontext.
-  const serialized = JSON.parse(window.localStorage.getItem("state"))
+  const state = window.localStorage.getItem("state")
+  if (!state)
+    return
+  
+  const serialized = JSON.parse(state)
   if (serialized) {
     {
       const ser = serialized["input"]
@@ -735,7 +763,9 @@ window.addEventListener("load", () => {
     document.addEventListener("pause", programStateSerialize)
     document.addEventListener("resume", programStateDeserialize)
     
-    document.getElementById("error").addEventListener("click", function () { this.style.display = "none" })
+    const errorEl = document.getElementById("error")
+    assert(errorEl)
+    errorEl.addEventListener("click", function () { this.style.display = "none" })
 
     try {
       programStateDeserialize()
@@ -743,45 +773,35 @@ window.addEventListener("load", () => {
       errorHandler("เจอปัญหาเมื่อโล๊ดสถานะโปรแกม: " + msg)
     }
     
-    if (device().platform != 'browser') {
-      cordova.plugins.backgroundMode.setDefaults({
-        title: 'กำลังทำงานในพื้นหลัง',
-        text: 'กำลังเล่นเสียง'
-      })
-      
-      cordova.plugins.backgroundMode.overrideBackButton()
-      cordova.plugins.backgroundMode.disableBatteryOptimizations()
-    }
-    
     const allButtons = document.getElementsByTagName("button")
 
     appChing = new AppChing(
-      document.getElementById("bpm") as HTMLInputElement,
-      document.getElementById("bpm-jing") as HTMLInputElement,
-      document.getElementById("chun") as HTMLInputElement,
-      document.getElementById("chun-jing") as HTMLInputElement,
-      document.getElementById('tune-glong') as HTMLInputElement,
-      document.getElementById("hong") as HTMLInputElement,
-      document.getElementById("play") as HTMLButtonElement,
-      document.getElementById("stop") as HTMLButtonElement,
-      document.getElementById("play-delay") as HTMLButtonElement,
+      demandById("bpm") as HTMLInputElement,
+      demandById("bpm-jing") as HTMLInputElement,
+      demandById("chun") as HTMLInputElement,
+      demandById("chun-jing") as HTMLInputElement,
+      demandById('tune-glong') as HTMLInputElement,
+      demandById("hong") as HTMLInputElement,
+      demandById("play") as HTMLButtonElement,
+      demandById("stop") as HTMLButtonElement,
+      demandById("play-delay") as HTMLButtonElement,
       [
-        document.getElementById("ching-visualize-0"),
-        document.getElementById("ching-visualize-1"),
-        document.getElementById("ching-visualize-2"),
-        document.getElementById("ching-visualize-3")
+        demandById("ching-visualize-0"),
+        demandById("ching-visualize-1"),
+        demandById("ching-visualize-2"),
+        demandById("ching-visualize-3")
       ],
-      document.getElementById("pattern-error")
+      demandById("pattern-error")
     )
 
     appChing.setupPreUserInteraction(
       demandById("pattern-drum", HTMLTextAreaElement),
       [
-        [document.getElementById("pattern-none"), ""],
-        [document.getElementById("pattern-lao"), patterns.pleyngDahmLao],
-        [document.getElementById("pattern-khmen"), patterns.pleyngDahmKhmen],
-        [document.getElementById("pattern-noyjaiyah"), patterns.dahmNoyJaiYah],
-        [document.getElementById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
+        [demandById("pattern-none"), ""],
+        [demandById("pattern-lao"), patterns.pleyngDahmLao],
+        [demandById("pattern-khmen"), patterns.pleyngDahmKhmen],
+        [demandById("pattern-noyjaiyah"), patterns.dahmNoyJaiYah],
+        [demandById("pattern-omdeuk"), patterns.pleyngKhmenOmDteuk]
       ]
     )
 
@@ -798,22 +818,23 @@ window.addEventListener("load", () => {
       }
     }
     
-    const setupFunc = e => {
+    const setupFunc = (e: Event) => {
       removeSetupAllButtons()
       
       appChing.setup(
-        document.getElementById("analyser") as HTMLCanvasElement,
-        document.getElementById("analyser-on") as HTMLButtonElement,
-        document.getElementById("analyser-off") as HTMLButtonElement,
-        document.getElementById("glongset") as HTMLSelectElement,
-        document.getElementById("play-ching-closed") as HTMLButtonElement,
-        document.getElementById("play-ching-open") as HTMLButtonElement,
+        demandById("analyser") as HTMLCanvasElement,
+        demandById("analyser-on") as HTMLButtonElement,
+        demandById("analyser-off") as HTMLButtonElement,
+        demandById("glongset") as HTMLSelectElement,
+        demandById("play-ching-closed") as HTMLButtonElement,
+        demandById("play-ching-open") as HTMLButtonElement,
         document.getElementsByClassName("play-drum"),
         document.getElementsByClassName("bpm-mod"),
-        document.getElementById('vol-glong'),
-        document.getElementById('vol-ching')
+        demandById('vol-glong'),
+        demandById('vol-ching')
       ).then(() => {
         // Re-trigger the original click event as the setup function would have added new events.
+        assert(e.target && e.target instanceof HTMLElement)
         e.target.click()
       }).catch(ex => {
         e.preventDefault()
