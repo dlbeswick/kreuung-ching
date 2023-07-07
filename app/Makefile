@@ -10,7 +10,7 @@ browser: build
 	"$(CORDOVA)" build browser
 
 cordova: cordova-prepare
-	"$(CORDOVA)" compile
+	"$(CORDOVA)" compile --release
 
 cordova-prepare: build
 	"$(CORDOVA)" prepare
