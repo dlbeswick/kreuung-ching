@@ -1,0 +1,17 @@
+#!/bin/bash
+# Run an F-Droid build locally, for testing.
+# Specify the environment variables:
+#   FDROIDDATA_PATH: path to cloned fdroiddata repo
+#   FDROIDSERVER_PATH: path to cloned fdroidserver repo
+#   ANDROID_HOME: path to root of Android SDK
+
+sudo docker run \
+	 --rm \
+	 -itu vagrant \
+	 --dns 8.8.8.8 \
+	 --entrypoint /bin/bash \
+	 -v $FDROIDDATA_PATH:/build:z \
+	 -v $ANDROID_HOME:/opt/android-sdk:ro \
+	 -v $FDROIDSERVER_PATH:/home/vagrant/fdroidserver:Z \
+	 registry.gitlab.com/fdroid/fdroidserver:buildserver \
+	 -c 'P=org.mamoowung.kreuungching; . /etc/profile; export PATH="$fdroidserver:$PATH" PYTHONPATH="$fdroidserver"; cd /build; fdroid readmeta; fdroid checkupdates --allow-dirty $P; fdroid lint $P; fdroid build $P;'
