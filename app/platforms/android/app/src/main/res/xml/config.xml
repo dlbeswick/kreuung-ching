@@ -4,9 +4,9 @@
     <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
     <content src="index.html" />
-    <icon src="res/ching.png" />
+    <icon src="www/img/logo.png" />
     <preference name="loglevel" value="DEBUG" />
-    <preference name="android-minSdkVersion" value="22" />
     <preference name="permissions" value="none" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/logo.png" />
 </widget>
