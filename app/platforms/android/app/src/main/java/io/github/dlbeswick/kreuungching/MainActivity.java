@@ -17,7 +17,7 @@
        under the License.
  */
 
-package org.mamoowung.kreuungching;
+package io.github.dlbeswick.kreuungching;
 
 import android.os.Bundle;
 
