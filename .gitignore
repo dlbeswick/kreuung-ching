@@ -1,8 +1,7 @@
+# Note: Cordova also adds its own .gitignore file at app/platforms/android/.gitignore
 .sass-cache
 app/platforms/android/app/src/main/assets/www/data
 app/platforms/browser
-app/platforms/android/*/build
-app/plugins/
 app/plugins/
 app/node_modules/
 app/www/css/

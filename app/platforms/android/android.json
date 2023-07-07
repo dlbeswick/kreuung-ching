@@ -4,36 +4,8 @@
     "uninstalled": []
   },
   "config_munge": {
-    "files": {
-      "res/xml/config.xml": {
-        "parents": {
-          "/*": [
-            {
-              "xml": "<feature name=\"Device\"><param name=\"android-package\" value=\"org.apache.cordova.device.Device\" /></feature>",
-              "count": 1
-            }
-          ]
-        }
-      }
-    }
+    "files": {}
   },
-  "installed_plugins": {
-    "cordova-plugin-device": {
-      "PACKAGE_NAME": "org.mamoowung.kreuungching"
-    }
-  },
-  "dependent_plugins": {},
-  "modules": [
-    {
-      "id": "cordova-plugin-device.device",
-      "file": "plugins/cordova-plugin-device/www/device.js",
-      "pluginId": "cordova-plugin-device",
-      "clobbers": [
-        "device"
-      ]
-    }
-  ],
-  "plugin_metadata": {
-    "cordova-plugin-device": "2.1.0"
-  }
+  "installed_plugins": {},
+  "dependent_plugins": {}
 }
