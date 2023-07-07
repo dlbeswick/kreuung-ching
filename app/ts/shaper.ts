@@ -26,8 +26,13 @@
  * "Factor" affects curve slope. Final factor value is interpolated from a and b from 0 to 1.
  * Choose equal factors for symmetric distortion (odd harmonics), or unequal for asymetric (even harmonics).
  */
-export function makeShaper(audioCtx, inputs, filterOnlyInputs, factorA=1, factorB=1, shift=1, oversample='4x',
-                           highpass=20) {
+import {
+  Instrument
+} from "./instrument.js";
+
+export function makeShaper(audioCtx: AudioContext, inputs: Instrument[], filterOnlyInputs: Instrument[],
+                           factorA=1, factorB=1, shift=1, oversample: OverSampleType = '4x', highpass=20) {
+  
   const shaper = audioCtx.createWaveShaper()
   const curve = new Float32Array(44100)
   for (let i=0; i < 44100; ++i) {

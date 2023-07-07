@@ -2,7 +2,7 @@ import { assert } from "./lib/assert.js"
 
 export const BEATS_PER_HONG = 2
 
-function bpmToTickPeriodMs(bpm) {
+function bpmToTickPeriodMs(bpm: number) {
   return 60000.0 / bpm / 2
 }
 
@@ -16,7 +16,7 @@ function bpmRampSeconds(bpmStart:number, bpmEnd:number, durHong:number) {
 export class BpmControl {
   private _bpm:number = 75
   private _msTickPeriod:number = bpmToTickPeriodMs(75)
-  private timings = undefined
+  private timings: number[]|undefined = undefined
   private timeoutTick?:number
   private timeoutBpmRamp?:number
   private tickTimeLast?:number
@@ -141,19 +141,17 @@ export class BpmControl {
       this.timings = undefined
   }
 
-  bpmRamp(bpmEnd, secTime, onStop=null) {
+  bpmRamp(bpmEnd: number, secTime: number, onStop = () => {}) {
     window.clearTimeout(this.timeoutBpmRamp)
     
     const startBpm = this._bpm
     const updatesPerSec = 10
     const updates = Math.max(Math.floor(secTime * updatesPerSec), 1)
 
-    const loop = i => {
+    const loop = (i: number) => {
       if (i == updates) {
         this.change(bpmEnd)
-        if (onStop) {
-          onStop()
-        }
+        onStop()
       } else {
         this.change(startBpm + (i/updates) * (bpmEnd - startBpm))
         this.timeoutBpmRamp = window.setTimeout(() => loop(i+1), 1000/updatesPerSec)
@@ -163,7 +161,7 @@ export class BpmControl {
     loop(1)
   }
 
-  bpmRampHongs(bpmEnd:number, hongs:number, onStop=null) {
+  bpmRampHongs(bpmEnd:number, hongs:number, onStop=() => {}) {
     this.bpmRamp(
       bpmEnd,
       hongs == 0 ? 0 : bpmRampSeconds(this._bpm, bpmEnd, hongs),

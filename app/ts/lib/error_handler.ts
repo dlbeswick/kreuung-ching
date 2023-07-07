@@ -1,7 +1,13 @@
-export function errorHandler(message, source?, lineno?, colno?, error?, showAlert=true) {
+export function errorHandler(message: any, source?: any, lineno?: any, colno?: any, error?: any, showAlert=true) {
   if (showAlert)
     alert(message)
-  document.getElementById("error").style.display = "block"
-  document.getElementById("error").innerHTML = message + "<br/>" + "Line: " + lineno + "<br/>" + source
+
+  const errorEl = document.getElementById("error")
+
+  if (errorEl) {
+    errorEl.style.display = "block"
+    errorEl.innerHTML = message + "<br/>" + "Line: " + lineno + "<br/>" + source
+  }
+  
   return true
 }
