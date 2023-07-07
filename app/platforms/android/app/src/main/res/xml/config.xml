@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="io.github.dlbeswick.kreuungching" version="1.7" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="io.github.dlbeswick.kreuungching" version="1.8" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>เครื่องฉิ่ง</name>
     <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
