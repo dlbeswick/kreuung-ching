@@ -1,4 +1,4 @@
-cordova.define("cordova-plugin-file.Metadata", function(require, exports, module) {
+cordova.define("cordova-plugin-splashscreen.SplashScreen", function(require, exports, module) {
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,24 +20,17 @@ cordova.define("cordova-plugin-file.Metadata", function(require, exports, module
  *
 */
 
-/**
- * Information about the state of the file or directory
- *
- * {Date} modificationTime (readonly)
- */
-var Metadata = function (metadata) {
-    if (typeof metadata === 'object') {
-        this.modificationTime = new Date(metadata.modificationTime);
-        this.size = metadata.size || 0;
-    } else if (typeof metadata === 'undefined') {
-        this.modificationTime = null;
-        this.size = 0;
-    } else {
-        /* Backwards compatiblity with platforms that only return a timestamp */
-        this.modificationTime = new Date(metadata);
+var exec = require('cordova/exec');
+
+var splashscreen = {
+    show: function () {
+        exec(null, null, 'SplashScreen', 'show', []);
+    },
+    hide: function () {
+        exec(null, null, 'SplashScreen', 'hide', []);
     }
 };
 
-module.exports = Metadata;
+module.exports = splashscreen;
 
 });

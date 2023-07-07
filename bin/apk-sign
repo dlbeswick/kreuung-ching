@@ -1,3 +1,4 @@
 #!/bin/bash
 # This is a prerequisite for generating signed APKs from fdroid output for testing on emulators.
+# Generate the file at KEYSTORE_PATH using the 'keystore-make' script.
 $ANDROID_HOME/build-tools/33.0.2/apksigner sign --ks $KEYSTORE_PATH $FDROIDDATA_PATH/unsigned/org.mamoowung.kreuungching_*.apk
