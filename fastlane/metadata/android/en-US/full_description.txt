@@ -1,1 +1,8 @@
-A drum machine for practicing and performing tradition Thai music. Includes ching and Thai drum instruments, synthesized and recorded sound samples, and a drum pattern editor.
+Automatic "ching" for practicing Thai music.
+
+* Sampled ching and glong sounds.
+* Tempo selection.
+* Start playing with "chup chup."
+* Create your own drum patterns.
+
+Hope you enjoy this program!

@@ -1,1 +1,1 @@
-Thai music drum machine.
+Automatic "ching" for Thai music.
