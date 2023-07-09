@@ -1,5 +1,8 @@
 # Note: Cordova also adds its own .gitignore file at app/platforms/android/.gitignore
 .sass-cache
+app/platforms/android/app/src/main/assets
+app/platforms/android/app/src/main/res/drawable-nodpi/
+app/platforms/android/app/src/main/res/mipmap-mdpi/
 app/platforms/browser
 app/plugins/
 app/node_modules/
