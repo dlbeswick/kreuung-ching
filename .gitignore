@@ -3,6 +3,7 @@
 app/platforms/android/app/src/main/assets
 app/platforms/android/app/src/main/res/drawable-nodpi/
 app/platforms/android/app/src/main/res/mipmap-mdpi/
+app/platforms/android/app/src/main/java/org/apache/cordova/device
 app/platforms/browser
 app/plugins/
 app/node_modules/
