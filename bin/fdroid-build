@@ -14,4 +14,4 @@ sudo docker run \
 	 -v $ANDROID_HOME:/opt/android-sdk:ro \
 	 -v $FDROIDSERVER_PATH:/home/vagrant/fdroidserver:Z \
 	 registry.gitlab.com/fdroid/fdroidserver:buildserver \
-	 -c 'P=io.github.dlbeswick.kreuungching; . /etc/profile; export PATH="$fdroidserver:$PATH" PYTHONPATH="$fdroidserver"; cd /build; fdroid readmeta; fdroid checkupdates --allow-dirty $P; fdroid lint $P; fdroid build $P;'
+	 -c 'P=io.github.dlbeswick.kreuungching; . /etc/profile; export PATH="$fdroidserver:$PATH" PYTHONPATH="$fdroidserver"; cd /build; fdroid readmeta; fdroid rewritemeta $P; fdroid checkupdates --allow-dirty $P; fdroid lint $P && fdroid build $P;'
