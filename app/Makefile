@@ -33,10 +33,10 @@ www/js/ching.js: ts/*.ts ts/lib/*.ts
 www/css/app.css : sass/app.scss www/css
 	"$(SASSC)" $< $@
 
-run: build cordova-prepare
+run: build cordova
 	"$(CORDOVA)" run android --device
 
-run-emu: build cordova-prepare
+run-emu: build cordova
 	"$(CORDOVA)" run android --emulator
 
 serve: build browser

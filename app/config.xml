@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
-		id="io.github.dlbeswick.kreuungching" version="1.15" android-versionCode="11500">
+		id="io.github.dlbeswick.kreuungching" version="1.16" android-versionCode="11600">
     <name>เครื่องฉิ่ง</name>
-    <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
+    <description>ฉิ่งอัตโนมัติเพื่อฝึกดนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
-	<content src="index.html" />
-	<icon src="www/img/logo.png" />
+    <content src="index.html" />
+    <icon src="www/img/logo.png" />
 
-	<!-- Note: Very old Android versions' WebView doesn't have any support for the WebAudio APIs and so an
-		 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards. -->
-	<preference name="permissions" value="none" />
-	<preference name="AndroidPersistentFileLocation" value="Compatibility" />
+    <!-- Note: Very old Android versions' WebView doesn't have any support for the WebAudio APIs and so an
+	 updatable WebView must be used. WebView is an updateable component only from 5.0.1 onwards. -->
+    <preference name="permissions" value="none" />
+    <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/logo.png" />
 </widget>
