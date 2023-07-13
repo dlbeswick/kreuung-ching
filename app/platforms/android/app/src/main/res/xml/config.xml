@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="11200" id="io.github.dlbeswick.kreuungching" version="1.12" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget android-versionCode="11600" id="io.github.dlbeswick.kreuungching" version="1.16" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <feature name="Device">
         <param name="android-package" value="org.apache.cordova.device.Device" />
     </feature>
     <name>เครื่องฉิ่ง</name>
-    <description>ฉิ่งอัตโนมัติเพื่อฝึกตนตรีไทย</description>
+    <description>ฉิ่งอัตโนมัติเพื่อฝึกดนตรีไทย</description>
     <author email="dlbeswick@gmail.com">David Beswick</author>
     <content src="index.html" />
     <icon src="www/img/logo.png" />
