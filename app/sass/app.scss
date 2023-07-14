@@ -268,3 +268,17 @@ fieldset {
 		}
 	}
 }
+
+#help-close {
+  float: right;
+  margin-right: 24px;
+  user-select: none;
+  font-size: larger;
+  
+  div {
+    background: beige;
+    position: fixed;
+    text-align: center;
+    width: 1em;
+  }
+}

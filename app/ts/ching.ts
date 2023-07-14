@@ -365,6 +365,10 @@ class AppChing {
       else
         eDlgPatternHelp.classList.add("split-show")
     })
+    
+    demandById("help-close").addEventListener("click", function () {
+      eDlgPatternHelp.classList.remove("split-show")
+    })
   }
 
   userPatternsUpdate() {
