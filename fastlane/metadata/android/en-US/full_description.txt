@@ -1,8 +1,13 @@
 Automatic "ching" for practicing Thai music.
 
-* Sampled ching and glong sounds.
+* Sampled ching and glong sounds from real instruments.
 * Tempo selection.
-* Start playing with "chup chup."
+* Start playing with "chup chup" (the initial double-strike of the ching cymbals.)
 * Create your own drum patterns.
 
-Hope you enjoy this program!
+I hope you enjoy this program!
+
+Please note that while this app contains both Thai and English translations and instructions for the most complicated
+functions, the majority of the user interface has been deliberately kept in Thai with the aim of encouraging interest
+in Thai script and the Thai language, as well as Thai music. I hope that the app also invites you, then, to be curious,
+push buttons, learn and explore, and have fun!
