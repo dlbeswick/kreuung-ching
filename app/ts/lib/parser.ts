@@ -118,11 +118,36 @@ class TerminalRegex extends Terminal {
   }
 }
 
+/**
+ * A node in the Abstract Syntax Tree formed by parsing a linear string using a grammar.
+ *
+ * It's valid for AstNodes not to have rules; for example, a WHITESPACE-type terminal may discard its text context as the
+ * parser isn't interested in its value.
+ * 
+ * @param rule   Define how the semantic content of the node is expressed, for example, returning the value of a parsed
+ *               digit.
+ * @param nodes  Child nodes of the current node. These must be given if a rule is defined for the node, i.e. the parser
+ *               will have created nodes to be passed to this constructor according to the Grammar.
+ *               For example, the rule may be defined as having two Terminals ['DIGIT', 'PERIOD'], and so nodes of these
+ *               type will be found under the node after parsing and the array will have length two. The job of the
+ *               ParseRule is to return the final semantic information that the nodes encode.
+ *               
+ */
 class AstNode<T> {
   constructor(readonly rule?: ParseRule<T>, readonly nodes?: (AstNode<T>|AstNode<string>)[], readonly lexeme?: string) {
+    assert(this.nodes || !this.rule, "An AstNode must be supplied with a list of nodes if it has a ParseRule defined.")
   }
 
-  semantic(context?: any): T|undefined  {
+  /**
+   * Return the semantic content of the node as defined by the ParseRule.
+   *
+   * If there's no useful content associated with this node, i.e. no ParseRule is defined, then this method returns
+   * 'undefined'.
+   */
+  semantic(context?: any): T|undefined {
+    if (!this.rule)
+      return undefined
+
     assert(this.nodes)
     return this.rule?.semantic(this.nodes, context)
   }
