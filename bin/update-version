@@ -12,4 +12,4 @@ echo Setting version $version/$versioncode
 sed -i $"s/version=\"[^\"]\\+\"/version=\"$version\"/" app/config.xml
 sed -i $"s/android-versionCode=\"[^\"]\\+\"/android-versionCode=\"$versioncode\"/" app/config.xml
 
-echo "Don't forget to check the changelogs at fastlane/metadata/android/en-US/changelogs/"
+echo "Don't forget to build and check the changelogs at fastlane/metadata/android/en-US/changelogs/"
