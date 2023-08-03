@@ -1,0 +1,15 @@
+#!/bin/bash
+version=$1
+if [[ -z "$version" ]]; then
+    echo No version given
+    exit 1
+fi
+
+versioncode=`echo $version | sed 's/\([[:digit:]]\)\.\([[:digit:]]\{2\}\).*/\1\200/'`
+
+echo Setting version $version/$versioncode
+
+sed -i $"s/version=\"[^\"]\\+\"/version=\"$version\"/" app/config.xml
+sed -i $"s/android-versionCode=\"[^\"]\\+\"/android-versionCode=\"$versioncode\"/" app/config.xml
+
+echo "Don't forget to check the changelogs at fastlane/metadata/android/en-US/changelogs/"
