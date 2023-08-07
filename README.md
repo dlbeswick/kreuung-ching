@@ -2,6 +2,11 @@
 
 This is a program to help practice and perform Thai music. It runs on both Android and in web browsers via Cordova.
 
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+     alt="Get it on F-Droid"
+     height="80">](https://f-droid.org/packages/io.github.dlbeswick.kreuungching/)
+
 # Build Requirements
 
 * nodejs (tested with v18.16.1)
