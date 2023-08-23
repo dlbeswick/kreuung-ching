@@ -28,10 +28,10 @@ This is a program to help practice and perform Thai music. It runs on both Andro
 
 You can use the Make task `run-emu` to run the project in an Android emulator for testing. Here's my commandline:
 
-  export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/; \
-  export ANDROID_HOME=<your android sdk path>; \
-  export PATH=/usr/lib/jvm/java-11-openjdk-amd64/bin/:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$PATH ; \
-  make run-emu
+    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/; \
+    export ANDROID_HOME=<your android sdk path>; \
+    export PATH=/usr/lib/jvm/java-11-openjdk-amd64/bin/:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$PATH ; \
+    make run-emu
 
 Please note that you may need to use Android Studio or the `avdmanager` command to create an emulator, first.
 
